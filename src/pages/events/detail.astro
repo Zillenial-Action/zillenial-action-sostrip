@@ -103,8 +103,13 @@ const skeleton: EventDetail = {
 				description: item.description,
 			})));
 
-			renderList('[data-notes-list]', '[data-notes-tpl]', event.notes.map((text) => ({ text })));
-		} catch {
+		renderList('[data-notes-list]', '[data-notes-tpl]', event.notes.map((text) => ({ text })));
+
+		renderList('[data-stats-list]', '[data-stats-tpl]', event.stats.map((stat) => ({
+			label: stat.label,
+			value: stat.value,
+		})));
+	} catch {
 			window.location.replace('/events');
 		}
 	};

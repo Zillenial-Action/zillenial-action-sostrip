@@ -38,14 +38,11 @@ const isLoading = !event.slug;
 		</div>
 	</div>
 
-	<div class="mt-md grid grid-cols-3 gap-sm" data-reveal-stagger>
-		{
-			event.stats.map((stat) => (
-				<div class="rounded-xl bg-surface-container-low p-sm text-center" data-reveal="scale">
-					<p class="text-[10px] font-bold uppercase tracking-[0.08em] text-on-surface-variant">{stat.label}</p>
-					<p class="mt-1 text-[12px] font-black leading-tight text-on-surface">{stat.value}</p>
-				</div>
-			))
-		}
-	</div>
+	<div class="mt-md grid grid-cols-3 gap-sm" data-stats-list></div>
+	<template data-stats-tpl>
+		<div class="rounded-xl bg-surface-container-low p-sm text-center">
+			<p class="text-[10px] font-bold uppercase tracking-[0.08em] text-on-surface-variant" data-bind="label"></p>
+			<p class="mt-1 text-[12px] font-black leading-tight text-on-surface" data-bind="value"></p>
+		</div>
+	</template>
 </section>

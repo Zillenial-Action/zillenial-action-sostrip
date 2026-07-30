@@ -670,13 +670,10 @@ import Layout from '../layouts/Layout.astro';
 			var channelLabelFn = CHANNEL_LABELS[data.payment_channel];
 			setTxt('order-method', channelLabelFn ? channelLabelFn((data.payment_instructions || {}).bank) : 'Kartu Kredit / Debit');
 
-			var imgEl = el('order-img');
-			if (imgEl && data.event.image) { imgEl.src = data.event.image; imgEl.alt = data.event.name; }
+		var imgEl = el('order-img');
+		if (imgEl && data.event.image) { imgEl.src = data.event.image; imgEl.alt = data.event.name; }
 
-			var backLink = el('back-link');
-			if (backLink && data.event.slug) backLink.href = '/checkout/' + data.event.slug;
-
-			el('order-skeleton').classList.add('hidden');
+		el('order-skeleton').classList.add('hidden');
 			el('order-real').classList.remove('hidden');
 
 			if (data.status_pembayaran === 'Success') { window.location.href = '/payment/success?order_id=' + encodeURIComponent(orderId); return; }

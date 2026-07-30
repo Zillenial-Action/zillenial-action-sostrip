@@ -52,8 +52,8 @@
 			if (!code) { showMsg('Masukkan kode voucher terlebih dahulu.', false); return; }
 
 			const eventId = form.dataset.eventId ?? '';
-			const qtyInput = form.querySelector<HTMLInputElement>('[data-qty-input]');
-			const jumlahTiket = parseInt(qtyInput?.value ?? '1', 10);
+		const qtyEl = form.querySelector<HTMLInputElement>('[data-qty-value]');
+		const jumlahTiket = parseInt(qtyEl?.value ?? '1', 10);
 
 			btn.setAttribute('disabled', 'true');
 			btn.setAttribute('aria-busy', 'true');

@@ -48,8 +48,8 @@ import Layout from '../../layouts/Layout.astro';
 		<div class="w-full max-w-sm space-y-sm">
 			<a
 				class="flex w-full items-center justify-center gap-sm rounded-2xl bg-primary px-lg py-md text-sm font-black text-on-primary shadow-[0_8px_24px_-8px_rgba(125,41,127,0.35)] transition-all active:scale-[0.98]"
-				href="/payment"
-				id="retry-payment-link"
+			href="#"
+			id="retry-payment-link"
 			>
 				<span class="material-symbols-outlined text-[18px]" data-icon="refresh">refresh</span>
 				Coba Bayar Lagi
@@ -85,9 +85,13 @@ import Layout from '../../layouts/Layout.astro';
 	if (el) el.textContent = orderId;
 
 	const retryLink = document.getElementById('retry-payment-link');
-	if (retryLink instanceof HTMLAnchorElement && orderId !== '—') {
-		const retryParams = new URLSearchParams({ order_id: orderId });
-		const retryHash = accessToken ? `#token=${encodeURIComponent(accessToken)}` : '';
-		retryLink.href = `/payment?${retryParams.toString()}${retryHash}`;
+	if (retryLink instanceof HTMLAnchorElement) {
+		if (orderId !== '—') {
+			const retryParams = new URLSearchParams({ order_id: orderId });
+			const retryHash = accessToken ? `#token=${encodeURIComponent(accessToken)}` : '';
+			retryLink.href = `/payment?${retryParams.toString()}${retryHash}`;
+		} else {
+			retryLink.href = '/events';
+		}
 	}
 </script>
