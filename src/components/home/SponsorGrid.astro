@@ -1,20 +1,9 @@
 ---
-// Daftar mitra/sponsor dengan nama file di public/mitra/ dan label tampilan
 const mitraList = [
   { file: 'raih-mimpi.png', alt: 'Raih Mimpi' },
   { file: 'diferensia.png', alt: 'Diferensia' },
   { file: 'kitabisa.png', alt: 'Kitabisa' },
 ];
-
-const eagerLogoCount = 6;
-
-// Encode nama file agar URL aman meski ada spasi/tanda kurung
-function encodePath(filename: string): string {
-  return '/mitra/' + filename.split('').map(c => {
-    const safe = /[A-Za-z0-9\-._~]/.test(c);
-    return safe ? c : encodeURIComponent(c);
-  }).join('');
-}
 ---
 
 <section class="sponsor-section" aria-labelledby="sponsor-heading">
@@ -23,17 +12,18 @@ function encodePath(filename: string): string {
     <p class="sponsor-subtitle">Terima kasih kepada seluruh mitra collaborator dan sponsor yang mendukung kegiatan Social Trip By Zillenial Action</p>
 
     <div class="sponsor-grid" role="list">
-      {mitraList.map((mitra, index) => (
+      {mitraList.map((mitra) => (
         <div class="sponsor-item" role="listitem">
           <img
-            src={encodePath(mitra.file)}
+            src={`/mitra/${mitra.file}`}
             alt={`Logo ${mitra.alt}`}
             width="160"
             height="80"
-            loading={index < eagerLogoCount ? 'eager' : 'lazy'}
+            loading="eager"
             decoding="async"
             class="sponsor-logo"
             draggable="false"
+            onerror="this.style.display='none';this.parentElement.style.display='none';"
           />
         </div>
       ))}
