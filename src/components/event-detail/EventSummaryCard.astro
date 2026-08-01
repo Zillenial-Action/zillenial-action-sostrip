@@ -6,19 +6,11 @@ interface Props {
 }
 
 const { event } = Astro.props;
-const isLoading = !event.slug;
 ---
 
 <section class="rounded-2xl border border-outline-variant/40 bg-white p-md shadow-[0_8px_24px_-12px_rgba(80,67,78,0.35)]" data-reveal>
 	<h1 class="mb-md font-headline-md text-headline-md text-on-surface" data-bind="title">
-		{
-			isLoading ? (
-				<span class="inline-flex items-center gap-xs text-body-sm font-normal text-on-surface-variant" role="status" aria-live="polite" aria-busy="true">
-					<span class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true"></span>
-					<span>Memuat detail event...</span>
-				</span>
-			) : event.title
-		}
+		{event.title}
 	</h1>
 
 	<div class="mb-md grid grid-cols-1 gap-sm">

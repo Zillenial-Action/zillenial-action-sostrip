@@ -1,0 +1,132 @@
+---
+---
+
+<div id="event-detail-skeleton" aria-hidden="true">
+	{/* Hero skeleton */}
+	<div class="relative overflow-hidden rounded-b-[40px] bg-surface-container-low skeleton-block" style="height: 280px;">
+		<div class="absolute inset-x-0 bottom-0 px-gutter pb-14 flex items-end gap-sm">
+			<div class="skeleton h-5 w-20 rounded-full"></div>
+			<div class="skeleton h-5 w-16 rounded-full"></div>
+		</div>
+	</div>
+
+	{/* Main content */}
+	<div class="relative z-20 -mt-10 space-y-lg px-gutter pb-28">
+		{/* Summary card skeleton */}
+		<div class="rounded-2xl border border-outline-variant/40 bg-white p-md shadow-[0_8px_24px_-12px_rgba(80,67,78,0.35)]">
+			<div class="mb-md space-y-2">
+				<div class="skeleton h-7 w-3/4 rounded-lg"></div>
+				<div class="skeleton h-5 w-1/2 rounded-md"></div>
+			</div>
+			<div class="mb-md grid grid-cols-1 gap-sm">
+				<div class="flex items-start gap-sm">
+					<div class="skeleton mt-0.5 h-5 w-5 rounded-full shrink-0"></div>
+					<div class="space-y-1 flex-1">
+						<div class="skeleton h-3 w-16 rounded"></div>
+						<div class="skeleton h-4 w-2/5 rounded"></div>
+					</div>
+				</div>
+				<div class="flex items-start gap-sm">
+					<div class="skeleton mt-0.5 h-5 w-5 rounded-full shrink-0"></div>
+					<div class="space-y-1 flex-1">
+						<div class="skeleton h-3 w-14 rounded"></div>
+						<div class="skeleton h-4 w-3/5 rounded"></div>
+					</div>
+				</div>
+			</div>
+			<div class="mt-md grid grid-cols-3 gap-sm">
+				{[0, 1, 2].map(() => (
+					<div class="rounded-xl bg-surface-container-low p-sm text-center space-y-1">
+						<div class="skeleton mx-auto h-3 w-3/4 rounded"></div>
+						<div class="skeleton mx-auto h-4 w-1/2 rounded"></div>
+					</div>
+				))}
+			</div>
+		</div>
+
+		{/* Highlights skeleton */}
+		<div class="space-y-md">
+			<div class="skeleton h-6 w-40 rounded-lg"></div>
+			<div class="rounded-3xl border border-outline-variant/40 bg-surface-container-lowest p-md">
+				<div class="grid grid-cols-1 gap-x-lg gap-y-sm sm:grid-cols-2">
+					{[0, 1, 2, 3].map(() => (
+						<div class="flex items-start gap-sm">
+							<div class="skeleton mt-0.5 h-6 w-6 rounded-full shrink-0"></div>
+							<div class="skeleton h-4 w-3/4 rounded mt-1"></div>
+						</div>
+					))}
+				</div>
+			</div>
+		</div>
+
+		{/* Tickets skeleton */}
+		<div class="space-y-md">
+			<div class="skeleton h-6 w-28 rounded-lg"></div>
+			<div class="space-y-sm">
+				{[0, 1].map(() => (
+					<div class="rounded-2xl border border-outline-variant/50 bg-white p-md shadow-[0_6px_18px_-14px_rgba(80,67,78,0.35)]">
+						<div class="flex items-start justify-between gap-sm">
+							<div class="space-y-2 flex-1">
+								<div class="skeleton h-5 w-1/2 rounded-md"></div>
+								<div class="skeleton h-3 w-3/4 rounded"></div>
+							</div>
+							<div class="skeleton h-5 w-16 rounded-full shrink-0"></div>
+						</div>
+						<div class="mt-md flex items-center justify-between rounded-xl bg-surface-container-low p-sm">
+							<div class="skeleton h-3 w-12 rounded"></div>
+							<div class="skeleton h-4 w-20 rounded"></div>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+
+		{/* Agenda skeleton */}
+		<div class="space-y-md">
+			<div class="skeleton h-6 w-32 rounded-lg"></div>
+			<div class="relative space-y-sm">
+				{[0, 1, 2].map(() => (
+					<div class="relative flex gap-sm">
+						<div class="skeleton z-10 h-9 w-9 rounded-full shrink-0"></div>
+						<div class="flex-1 rounded-2xl bg-surface-container-lowest p-md space-y-2">
+							<div class="skeleton h-3 w-24 rounded"></div>
+							<div class="skeleton h-4 w-2/3 rounded-md"></div>
+							<div class="skeleton h-3 w-full rounded"></div>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+
+		{/* Location skeleton */}
+		<div class="space-y-md">
+			<div class="skeleton h-6 w-36 rounded-lg"></div>
+			<div class="overflow-hidden rounded-2xl border border-outline-variant/40 bg-white shadow-[0_8px_24px_-14px_rgba(80,67,78,0.35)]">
+				<div class="skeleton-block h-[150px]"></div>
+				<div class="p-md space-y-2">
+					<div class="skeleton h-5 w-3/5 rounded-md"></div>
+					<div class="skeleton h-3 w-2/5 rounded"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+	.skeleton {
+		background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+		background-size: 200% 100%;
+		animation: shimmer 1.4s infinite;
+	}
+
+	.skeleton-block {
+		background: linear-gradient(90deg, #ebebeb 25%, #dcdcdc 50%, #ebebeb 75%);
+		background-size: 200% 100%;
+		animation: shimmer 1.4s infinite;
+	}
+
+	@keyframes shimmer {
+		0% { background-position: 200% 0; }
+		100% { background-position: -200% 0; }
+	}
+</style>

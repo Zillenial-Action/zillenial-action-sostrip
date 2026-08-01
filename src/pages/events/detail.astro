@@ -6,6 +6,7 @@ import EventLocationNote from '../../components/event-detail/EventLocationNote.a
 import EventStickyCTA from '../../components/event-detail/EventStickyCTA.astro';
 import EventSummaryCard from '../../components/event-detail/EventSummaryCard.astro';
 import EventTickets from '../../components/event-detail/EventTickets.astro';
+import SkeletonEventDetail from '../../components/event-detail/SkeletonEventDetail.astro';
 import Layout from '../../layouts/Layout.astro';
 import type { EventDetail } from '../../data/events';
 
@@ -18,14 +19,17 @@ const skeleton: EventDetail = {
 ---
 
 <Layout title="Detail Event | Zillenial Action">
-	<EventDetailHero event={skeleton} />
-	<main class="relative z-20 -mt-10 space-y-lg px-gutter pb-28">
-		<EventSummaryCard event={skeleton} />
-		<EventHighlights event={skeleton} />
-		<EventTickets event={skeleton} />
-		<EventAgenda event={skeleton} />
-		<EventLocationNote event={skeleton} />
-	</main>
+	<SkeletonEventDetail />
+	<div id="event-detail-content" class="hidden">
+		<EventDetailHero event={skeleton} />
+		<main class="relative z-20 -mt-10 space-y-lg px-gutter pb-28">
+			<EventSummaryCard event={skeleton} />
+			<EventHighlights event={skeleton} />
+			<EventTickets event={skeleton} />
+			<EventAgenda event={skeleton} />
+			<EventLocationNote event={skeleton} />
+		</main>
+	</div>
 	<EventStickyCTA event={skeleton} />
 </Layout>
 
@@ -109,6 +113,11 @@ const skeleton: EventDetail = {
 			label: stat.label,
 			value: stat.value,
 		})));
+
+			const skeleton = document.getElementById('event-detail-skeleton');
+			const content = document.getElementById('event-detail-content');
+			skeleton?.classList.add('hidden');
+			content?.classList.remove('hidden');
 	} catch {
 			window.location.replace('/events');
 		}
