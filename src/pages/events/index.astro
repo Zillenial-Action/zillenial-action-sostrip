@@ -1,6 +1,6 @@
 ---
 import EventListCard from '../../components/event/EventListCard.astro';
-import LoadingState from '../../components/ui/LoadingState.astro';
+import SkeletonEventListCard from '../../components/ui/SkeletonEventListCard.astro';
 import Layout from '../../layouts/Layout.astro';
 ---
 
@@ -25,7 +25,7 @@ import Layout from '../../layouts/Layout.astro';
 	</header>
 
 	<main class="space-y-sm px-gutter pb-32" data-reveal-stagger data-events-list>
-		<LoadingState label="Memuat Social Trip..." class="py-xl" />
+		<SkeletonEventListCard count={5} />
 	</main>
 
 	<template data-events-tpl>

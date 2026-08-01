@@ -1,5 +1,5 @@
 ---
-import LoadingState from '../ui/LoadingState.astro';
+import SkeletonPaymentMethod from '../ui/SkeletonPaymentMethod.astro';
 ---
 
 <div data-reveal-scope>
@@ -11,9 +11,9 @@ import LoadingState from '../ui/LoadingState.astro';
 			<div class="min-w-0 flex-1">
 				<p class="text-[10px] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Metode pembayaran</p>
 				<h2 class="mt-0.5 font-title-md text-title-md text-on-surface">Pilih kanal bayar</h2>
-				<div class="mt-xs" data-payment-summary>
-					<LoadingState label="Memuat metode pembayaran..." variant="inline" size="sm" class="justify-start" />
-				</div>
+			<div class="mt-xs" data-payment-summary>
+				<div class="skeleton-inline h-3 w-48 rounded-md"></div>
+			</div>
 			</div>
 			<button
 				type="button"
@@ -57,7 +57,7 @@ import LoadingState from '../ui/LoadingState.astro';
 			</div>
 
 			<div class="space-y-md overflow-y-auto p-md" data-reveal-stagger data-pm-list>
-				<LoadingState label="Memuat metode pembayaran..." variant="inline" size="sm" class="py-sm" />
+				<SkeletonPaymentMethod count={3} />
 			</div>
 
 			<div class="flex gap-sm border-t border-outline-variant/30 bg-white px-md py-sm">
@@ -97,6 +97,20 @@ import LoadingState from '../ui/LoadingState.astro';
 		</label>
 	</template>
 </div>
+
+<style>
+	.skeleton-inline {
+		display: block;
+		background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+		background-size: 200% 100%;
+		animation: shimmer 1.4s infinite;
+	}
+
+	@keyframes shimmer {
+		0% { background-position: 200% 0; }
+		100% { background-position: -200% 0; }
+	}
+</style>
 
 <script>
 	const setupPaymentModal = () => {

@@ -1,6 +1,6 @@
 ---
 import EventListCard from '../event/EventListCard.astro';
-import LoadingState from '../ui/LoadingState.astro';
+import SkeletonEventListCard from '../ui/SkeletonEventListCard.astro';
 ---
 
 <section class="animate-reveal delay-100" aria-labelledby="event-list-title" data-reveal-scope>
@@ -9,7 +9,7 @@ import LoadingState from '../ui/LoadingState.astro';
 		<span class="text-[11px] font-bold uppercase tracking-[0.08em] text-primary" data-preview-count>0 Social Trip</span>
 	</div>
 	<div class="space-y-sm" data-reveal-stagger data-preview-list>
-		<LoadingState label="Memuat Social Trip..." size="sm" class="py-md" />
+		<SkeletonEventListCard count={3} />
 	</div>
 
 	<template data-preview-tpl>

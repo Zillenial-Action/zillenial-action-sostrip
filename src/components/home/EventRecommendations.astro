@@ -1,6 +1,6 @@
 ---
 import EventCard from './EventCard.astro';
-import LoadingState from '../ui/LoadingState.astro';
+import SkeletonEventCard from '../ui/SkeletonEventCard.astro';
 ---
 
 <section class="relative z-20 -mt-[165px]" data-event-carousel data-reveal-scope>
@@ -34,7 +34,7 @@ import LoadingState from '../ui/LoadingState.astro';
 		aria-label="Daftar rekomendasi event"
 		data-rec-list
 	>
-		<LoadingState label="Memuat Social Trip..." variant="dark" size="sm" class="min-w-full py-lg" />
+		<SkeletonEventCard count={4} />
 	</div>
 
 	<template data-rec-tpl>

@@ -617,19 +617,26 @@ import Layout from '../layouts/Layout.astro';
 
 	// ── Status polling — backend diupdate oleh webhook Midtrans ───────────────
 	var pollIv = null;
+	var pollAttempt = 0;
+	var pollIntervals = [5000, 10000, 20000, 40000, 60000];
 	function startStatusPolling() {
-		pollIv = setInterval(function () {
-			api.transaksi.status(orderId, accessToken).then(function (res) {
-				var status = res.data.status_pembayaran;
-				if (status === 'Success') {
-					clearInterval(pollIv);
-					window.location.href = '/payment/success?order_id=' + encodeURIComponent(orderId);
-				} else if (status === 'Failed') {
-					clearInterval(pollIv);
-					window.location.href = paymentPath('/payment/failed');
-				}
-			}).catch(function () { /* abaikan, coba lagi di polling berikutnya */ });
-		}, 5000);
+		function schedulePoll() {
+			var delay = pollIntervals[Math.min(pollAttempt, pollIntervals.length - 1)];
+			pollIv = setTimeout(function () {
+				pollAttempt++;
+				api.transaksi.status(orderId, accessToken).then(function (res) {
+					var status = res.data.status_pembayaran;
+					if (status === 'Success') {
+						window.location.href = '/payment/success?order_id=' + encodeURIComponent(orderId);
+					} else if (status === 'Failed') {
+						window.location.href = paymentPath('/payment/failed');
+					} else {
+						schedulePoll();
+					}
+				}).catch(function () { schedulePoll(); });
+			}, delay);
+		}
+		schedulePoll();
 	}
 
 	// ── Confirm / "sudah bayar" button — nudge manual, konfirmasi nyata dari polling ──
