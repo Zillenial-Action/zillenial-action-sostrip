@@ -6,14 +6,14 @@ const mitraList = [
 ];
 ---
 
-<section class="sponsor-section" aria-labelledby="sponsor-heading">
+<section class="sponsor-section animate-reveal delay-200" aria-labelledby="sponsor-heading" data-reveal>
   <div class="sponsor-inner">
-    <h2 id="sponsor-heading" class="sponsor-title">Didukung oleh</h2>
-    <p class="sponsor-subtitle">Terima kasih kepada seluruh mitra collaborator dan sponsor yang mendukung kegiatan Social Trip By Zillenial Action</p>
+    <h2 id="sponsor-heading" class="sponsor-title" data-reveal>Didukung oleh</h2>
+    <p class="sponsor-subtitle" data-reveal>Terima kasih kepada seluruh mitra collaborator dan sponsor yang mendukung kegiatan Social Trip By Zillenial Action</p>
 
-    <div class="sponsor-grid" role="list">
+    <div class="sponsor-grid" role="list" data-reveal-stagger>
       {mitraList.map((mitra) => (
-        <div class="sponsor-item" role="listitem">
+        <div class="sponsor-item" role="listitem" data-reveal>
           <img
             src={`/mitra/${mitra.file}`}
             alt={`Logo ${mitra.alt}`}
