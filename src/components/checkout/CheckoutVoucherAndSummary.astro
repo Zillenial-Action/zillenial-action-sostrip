@@ -65,9 +65,9 @@
 					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 					body: JSON.stringify({ code, event_id: Number(eventId), jumlah_tiket: jumlahTiket }),
 				});
-				const data = await res.json() as { valid?: boolean; discount_per_ticket?: number; message?: string };
+				const data = await res.json() as { success?: boolean; discount_per_ticket?: number; message?: string };
 
-				if (!res.ok || !data.valid) {
+				if (!res.ok || !data.success) {
 					showMsg(data.message ?? 'Kode voucher tidak valid.', false);
 				} else {
 					showMsg(`Voucher berhasil! Diskon Rp ${(data.discount_per_ticket ?? 0).toLocaleString('id-ID')} per tiket.`, true);
