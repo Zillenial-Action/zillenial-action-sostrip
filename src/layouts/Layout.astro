@@ -8,7 +8,6 @@ interface Props {
 }
 
 const { title = 'Zillenial Action' } = Astro.props;
-const backendOrigin = import.meta.env.PUBLIC_BACKEND_URL ? new URL(import.meta.env.PUBLIC_BACKEND_URL).origin : '';
 ---
 
 <!doctype html>
@@ -18,7 +17,7 @@ const backendOrigin = import.meta.env.PUBLIC_BACKEND_URL ? new URL(import.meta.e
 		<meta content="width=device-width, initial-scale=1.0" name="viewport" />
 		<meta
 			http-equiv="Content-Security-Policy"
-			content={`default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://zillenialaction.id https://sostrip.zillenialaction.id ${backendOrigin} http://localhost:8000 http://localhost:8080 http://localhost:4321; frame-src 'none'; object-src 'none'; base-uri 'self';`}
+			content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://zillenialaction.id; frame-src 'none'; object-src 'none'; base-uri 'self';"
 		/>
 		<title>{title}</title>
 		<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,600;0,700;0,900;1,900&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
@@ -188,9 +187,9 @@ const backendOrigin = import.meta.env.PUBLIC_BACKEND_URL ? new URL(import.meta.e
 	</head>
 	<body class="bg-surface-container-highest text-on-background font-body-md min-h-screen">
 		<Toast />
-		<div class="relative mx-auto min-h-screen max-w-[430px] overflow-x-hidden bg-background pb-24 shadow-[0_0_40px_rgba(80,67,78,0.12)]">
+		<div class="relative mx-auto min-h-screen max-w-[430px] overflow-x-hidden bg-background pb-8 shadow-[0_0_40px_rgba(80,67,78,0.12)]">
 			<slot />
-			<!-- <BottomNav /> -->
+			{/* <BottomNav /> */}
 		</div>
 		<script is:inline>
 			const setupMotionReveal = () => {

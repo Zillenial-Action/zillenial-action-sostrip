@@ -1,39 +1,21 @@
 ---
 const navItems = [
-	{ label: 'Beranda', icon: 'home', href: '/', active: Astro.url.pathname === '/' },
-	{ label: 'Event', icon: 'calendar_today', href: '/events', active: Astro.url.pathname.startsWith('/events') },
-	{ label: 'Akun', icon: 'person', href: '/dashboard/akun', active: Astro.url.pathname.startsWith('/dashboard/akun') },
+	{ label: 'Home', icon: 'home', href: '#', active: true },
+	{ label: 'Event', icon: 'calendar_today', href: '#', active: false },
+	{ label: 'Blog', icon: 'newspaper', href: '#', active: false },
+	{ label: 'Akun', icon: 'person', href: '#', active: false },
 ];
 ---
 
-<nav class="fixed bottom-0 left-1/2 z-50 flex w-full max-w-[430px] -translate-x-1/2 items-center justify-between border-t border-outline-variant bg-background px-gutter py-2" style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));" aria-label="Navigasi utama" data-bottom-nav>
+<nav class="fixed bottom-0 left-1/2 w-full max-w-[430px] -translate-x-1/2 bg-white border-t border-surface-container-highest shadow-[0_-2px_10px_rgba(0,0,0,0.05)] px-gutter py-2 flex justify-between items-center z-50" aria-label="Navigasi utama" data-bottom-nav>
 	{
 		navItems.map((item) => (
-			<a class:list={['relative flex min-h-11 flex-1 flex-col items-center justify-center gap-1 nav-item-active', item.active ? 'text-primary' : 'text-on-surface-variant']} href={item.href} aria-current={item.active ? 'page' : undefined}>
+			<a class:list={['flex flex-col items-center gap-1 flex-1 nav-item-active', item.active ? 'text-primary' : 'text-on-surface-variant']} href={item.href} aria-current={item.active ? 'page' : undefined}>
 				<span class="material-symbols-outlined text-[24px]" style={item.active ? "font-variation-settings: 'FILL' 1;" : undefined}>
 					{item.icon}
 				</span>
-				<span class="text-[11px] font-semibold">{item.label}</span>
+				<span class="text-[10px] font-semibold">{item.label}</span>
 			</a>
 		))
 	}
 </nav>
-
-<style>
-	[data-bottom-nav] a:focus-visible {
-		outline: 3px solid #7d297f;
-		outline-offset: -3px;
-		border-radius: 8px;
-	}
-
-	[data-bottom-nav] a[aria-current='page']::before {
-		position: absolute;
-		top: -0.5rem;
-		left: 25%;
-		right: 25%;
-		height: 3px;
-		border-radius: 0 0 3px 3px;
-		background: #7d297f;
-		content: '';
-	}
-</style>
