@@ -1,0 +1,64 @@
+---
+import Icon from './Icon.astro';
+
+interface Props {
+	label: string;
+	loadingLabel?: string;
+	icon: 'calendar' | 'login' | 'logout' | 'payment' | 'register' | 'save' | 'send' | 'ticket';
+	href?: string;
+	id?: string;
+	type?: 'button' | 'submit';
+	variant?: 'google' | 'primary' | 'secondary' | 'text';
+	class?: string;
+	hidden?: boolean;
+	disabled?: boolean;
+}
+
+const {
+	label,
+	loadingLabel = 'Memproses...',
+	icon,
+	href,
+	id,
+	type = 'button',
+	variant = 'primary',
+	class: className,
+	hidden = false,
+	disabled = false,
+} = Astro.props;
+
+const variantClass: Record<NonNullable<Props['variant']>, string> = {
+	primary:
+		'min-h-[50px] rounded-full bg-primary px-md text-sm text-white shadow-[0_10px_20px_-12px_rgba(125,41,127,0.85)] hover:bg-[#5f1f61] focus-visible:outline-primary disabled:bg-[#6f5b6d] disabled:shadow-none',
+	secondary:
+		'min-h-[50px] rounded-full border border-primary bg-white px-md text-sm text-primary hover:bg-surface-container-low focus-visible:outline-primary disabled:opacity-60',
+	google:
+		'min-h-[50px] rounded-full border border-outline bg-white px-md text-sm text-on-surface hover:border-on-surface-variant hover:bg-surface-container-low focus-visible:outline-primary disabled:opacity-60',
+	text:
+		'min-h-11 rounded-xl border border-white/70 bg-black/20 px-3 text-xs text-white backdrop-blur-sm hover:bg-black/30 focus-visible:outline-white disabled:opacity-60',
+};
+
+const classes = [
+	'action-button inline-flex items-center justify-center gap-sm font-black transition-all active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-100',
+	variantClass[variant],
+	className,
+];
+---
+
+{href ? (
+	<a class:list={classes} {href} {id} {hidden}>
+		<Icon name={variant === 'google' ? 'google' : icon} />
+		<span>{label}</span>
+	</a>
+) : (
+	<button class:list={classes} {type} {id} {hidden} {disabled} data-async-button data-default-label={label} data-loading-label={loadingLabel}>
+		<span data-action-icon><Icon name={icon} /></span>
+		<span data-action-spinner hidden><Icon name="spinner" /></span>
+		<span data-action-label>{label}</span>
+	</button>
+)}
+
+<style>
+	.action-button[hidden] { display: none; }
+	@media (prefers-reduced-motion: reduce) { .action-button { transition: none; } }
+</style>

@@ -1,0 +1,50 @@
+---
+import AuthShell from '../../components/auth/AuthShell.astro';
+import ActionButton from '../../components/ui/ActionButton.astro';
+import Icon from '../../components/ui/Icon.astro';
+---
+
+<AuthShell title="Memproses akun" heading="Memproses akun" intro="Menyiapkan sesi akun kamu." showFootnote={false}>
+	<div class="callback-status flex min-h-11 items-center gap-sm text-sm font-semibold text-on-surface-variant" id="callback-status" role="status">
+		<Icon name="spinner" />
+		<span>Memeriksa hasil autentikasi...</span>
+	</div>
+	<div class="mt-md grid">
+		<ActionButton id="callback-link" label="Kembali ke login" icon="login" href="/auth/login" hidden />
+	</div>
+</AuthShell>
+
+<script>
+	import { api } from '../../lib/api';
+
+	const params = new URLSearchParams(window.location.search);
+	const title = document.querySelector('[data-auth-heading]');
+	const message = document.querySelector('[data-auth-intro]');
+	const status = document.querySelector<HTMLElement>('#callback-status');
+	const link = document.querySelector<HTMLElement>('#callback-link');
+	const fail = (heading: string, detail: string) => {
+		if (title) title.textContent = heading;
+		if (message) message.textContent = detail;
+		if (status) status.hidden = true;
+		if (link) link.hidden = false;
+	};
+
+	if (params.get('oauth') && params.get('oauth') !== 'success') {
+		fail('Login Google belum selesai', 'Coba lagi atau gunakan login email untuk melanjutkan.');
+	} else if (params.get('email_verified') === '1') {
+		if (title) title.textContent = 'Email terverifikasi';
+		if (message) message.textContent = 'Transaksi lama kamu sedang disiapkan.';
+	} else if (params.get('oauth') !== 'success') {
+		api.auth.me().then(() => {
+			window.location.replace('/dashboard/akun');
+		}).catch(() => fail('Sesi belum tersedia', 'Silakan login kembali untuk membuka akun.'));
+	}
+
+	if (params.get('oauth') === 'success' || params.get('email_verified') === '1') {
+		setTimeout(() => window.location.replace('/dashboard/akun'), 500);
+	}
+</script>
+
+<style>
+	.callback-status[hidden] { display: none; }
+</style>

@@ -1,0 +1,208 @@
+---
+import AuthNotice from '../../components/auth/AuthNotice.astro';
+import AuthPageHeader from '../../components/auth/AuthPageHeader.astro';
+import ActionButton from '../../components/ui/ActionButton.astro';
+import Icon from '../../components/ui/Icon.astro';
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Akun | Zillenial Action">
+	<div class="grid min-h-[70vh] place-items-center text-on-surface-variant" data-akun-gate role="status">
+		<Icon name="spinner" />
+		<span class="sr-only">Memeriksa sesi...</span>
+	</div>
+	<main class="pb-32" data-akun-main hidden>
+		<AuthPageHeader>
+			<Fragment slot="action">
+				<ActionButton id="logout-button" label="Keluar" loadingLabel="Keluar..." icon="logout" variant="text" />
+			</Fragment>
+		</AuthPageHeader>
+
+		<section class="relative -mt-4 px-gutter" aria-labelledby="account-heading">
+			<div class="flex items-center gap-md rounded-2xl border border-outline-variant/40 bg-white p-md shadow-[0_10px_28px_-16px_rgba(80,67,78,0.4)] animate-reveal delay-100">
+				<div class="account-avatar flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary font-headline-md text-xl font-black text-white" data-account-initials aria-hidden="true">SZ</div>
+				<div class="min-w-0">
+					<p class="inline-flex rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-primary">Akun Sostrip</p>
+					<h1 id="account-heading" data-account-name class="mt-0.5 font-headline-md text-headline-md text-on-surface" style="overflow-wrap: anywhere;">Memuat akun</h1>
+					<p class="mt-0.5 text-body-sm text-on-surface-variant" data-account-email style="word-break: break-word;"></p>
+				</div>
+			</div>
+		</section>
+
+		<section class="mt-xl px-gutter" aria-labelledby="orders-heading">
+			<div class="mb-md">
+				<p class="text-[11px] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Riwayat</p>
+				<h2 id="orders-heading" class="mt-0.5 font-headline-md text-headline-md text-on-surface">Pesanan dan tiket</h2>
+			</div>
+			<div class="account-loading flex items-center gap-sm rounded-2xl border border-outline-variant/40 bg-white p-md text-sm text-on-surface-variant" data-orders-loading role="status"><Icon name="spinner" /><span>Memuat pesanan kamu...</span></div>
+			<AuthNotice id="account-message" kind="error" />
+			<div class="rounded-2xl border border-outline-variant/40 bg-white p-md" data-unverified hidden>
+				<div class="flex items-center gap-sm text-primary"><Icon name="email" /><h3 class="font-headline-md text-lg font-bold text-on-surface">Verifikasi email dulu</h3></div>
+				<p class="mb-md mt-sm text-sm text-on-surface-variant">Setelah email terverifikasi, transaksi dengan email yang sama akan muncul di sini.</p>
+				<ActionButton id="resend-button" label="Kirim ulang email verifikasi" loadingLabel="Mengirim email..." icon="send" />
+				<p class="account-inline-status mt-sm min-h-[20px] text-sm text-on-surface-variant" data-resend-status role="status"></p>
+			</div>
+			<div class="rounded-2xl border border-outline-variant/40 bg-white p-md" data-orders-empty hidden>
+				<div class="flex items-center gap-sm text-primary"><Icon name="ticket" /><h3 class="font-headline-md text-lg font-bold text-on-surface">Belum ada pesanan di akun ini.</h3></div>
+				<p class="mb-md mt-sm text-sm text-on-surface-variant">Pesanan berikutnya akan muncul otomatis setelah emailnya terverifikasi.</p>
+				<ActionButton label="Lihat event" icon="calendar" href="/events" />
+			</div>
+			<div class="account-list grid gap-sm" data-orders-list hidden></div>
+			<template id="ticket-action-icon"><Icon name="ticket" /></template>
+			<template id="payment-action-icon"><Icon name="payment" /></template>
+		</section>
+	</main>
+</Layout>
+
+<script>
+	import { ApiError, api, type Customer, type CustomerOrder } from '../../lib/api';
+	import { setButtonLoading, setNotice } from '../../lib/auth-form';
+
+	const gate = document.querySelector('[data-akun-gate]');
+	const mainEl = document.querySelector('[data-akun-main]');
+	const nameNode = document.querySelector('[data-account-name]');
+	const emailNode = document.querySelector('[data-account-email]');
+	const initialsNode = document.querySelector('[data-account-initials]');
+	const loading = document.querySelector('[data-orders-loading]');
+	const list = document.querySelector('[data-orders-list]');
+	const empty = document.querySelector('[data-orders-empty]');
+	const message = document.querySelector('#account-message');
+	const unverified = document.querySelector('[data-unverified]');
+
+	const money = (value: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
+	const date = (value: string | null) => value ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(value)) : 'Tanggal belum tersedia';
+	const setHidden = (node: Element | null, hidden: boolean) => node?.toggleAttribute('hidden', hidden);
+	const statusLabel: Record<CustomerOrder['status'], string> = { Pending: 'Menunggu pembayaran', Success: 'Berhasil', Failed: 'Gagal' };
+
+	const renderProfile = (customer: Customer) => {
+		if (nameNode) nameNode.textContent = customer.name;
+		if (emailNode) emailNode.textContent = customer.email;
+		if (initialsNode) initialsNode.textContent = customer.initials;
+		if (!customer.email_verified) { setHidden(unverified, false); return false; }
+		return true;
+	};
+
+	const renderOrders = (orders: CustomerOrder[]) => {
+		if (!(list instanceof HTMLElement)) return;
+		if (!orders.length) { setHidden(empty, false); return; }
+		list.replaceChildren(...orders.map((order) => {
+			const article = document.createElement('article');
+			article.className = 'account-order';
+			const top = document.createElement('div');
+			top.className = 'account-order-top';
+			const info = document.createElement('div');
+			const eventName = document.createElement('p');
+			eventName.className = 'account-order-event';
+			eventName.textContent = order.event?.name ?? 'Event Zillenial Action';
+			const invoice = document.createElement('p');
+			invoice.className = 'account-order-invoice';
+			invoice.textContent = order.invoice;
+			info.append(eventName, invoice);
+			const status = document.createElement('span');
+			status.className = `account-status status-${order.status.toLowerCase()}`;
+			status.textContent = statusLabel[order.status];
+			top.append(info, status);
+			const meta = document.createElement('div');
+			meta.className = 'account-order-meta';
+			[date(order.tanggal_register), `${order.jumlah_tiket} tiket`].forEach((value) => {
+				const span = document.createElement('span');
+				span.textContent = value;
+				meta.append(span);
+			});
+			const total = document.createElement('strong');
+			total.textContent = money(order.total_pembayaran);
+			meta.append(total);
+			article.append(top, meta);
+			if (order.action) {
+				const action = document.createElement('a');
+				action.className = 'account-button account-order-action';
+				action.href = order.action.url;
+				const templateId = order.action.type === 'view_ticket' ? '#ticket-action-icon' : '#payment-action-icon';
+				const template = document.querySelector<HTMLTemplateElement>(templateId);
+				const icon = template?.content.firstElementChild?.cloneNode(true);
+				if (icon) action.append(icon);
+				const label = document.createElement('span');
+				label.textContent = order.action.type === 'view_ticket' ? 'Lihat tiket' : 'Lanjutkan pembayaran';
+				action.append(label);
+				article.append(action);
+			}
+			return article;
+		}));
+		setHidden(list, false);
+	};
+
+	const loadAccount = async () => {
+		let customerResponse;
+		try {
+			customerResponse = await api.auth.me();
+		} catch {
+			// Sesi tidak bisa dikonfirmasi (belum login, atau gagal terhubung ke sesi). Arahkan ke login
+			// langsung tanpa pernah menampilkan halaman akun (main tetap hidden dari awal render).
+			window.location.replace(`/auth/login?next=${encodeURIComponent('/dashboard/akun')}`);
+			return;
+		}
+
+		setHidden(gate, true);
+		setHidden(mainEl, false);
+
+		const verified = renderProfile(customerResponse.data);
+		setHidden(loading, true);
+		if (!verified) return;
+
+		try {
+			const orders = await api.auth.orders();
+			renderOrders(orders.data);
+		} catch (error) {
+			setNotice(message, error instanceof ApiError ? error.message : 'Pesanan belum dapat dimuat. Coba lagi.');
+		}
+	};
+
+	document.querySelector('#logout-button')?.addEventListener('click', async () => {
+		const button = document.querySelector<HTMLButtonElement>('#logout-button');
+		setNotice(message);
+		setButtonLoading(button, true);
+		try {
+			await api.auth.logout();
+			window.location.assign('/');
+		} catch {
+			setNotice(message, 'Keluar belum berhasil. Coba lagi.');
+			setButtonLoading(button, false);
+		}
+	});
+
+	document.querySelector('#resend-button')?.addEventListener('click', async () => {
+		const button = document.querySelector<HTMLButtonElement>('#resend-button');
+		const status = document.querySelector('[data-resend-status]');
+		setButtonLoading(button, true);
+		try {
+			const response = await api.auth.resendVerification();
+			if (status) status.textContent = response.message;
+		} catch {
+			if (status) status.textContent = 'Email belum terkirim. Coba lagi sebentar.';
+		} finally {
+			setButtonLoading(button, false);
+		}
+	});
+
+	loadAccount();
+</script>
+
+<style is:global>
+	[data-akun-gate][hidden], .account-loading[hidden], .account-list[hidden] { display: none; }
+	.account-order { border-radius: 1rem; border: 1px solid rgba(212, 193, 207, 0.4); background: #fff; padding: 16px; box-shadow: 0 10px 28px -18px rgba(80, 67, 78, 0.35); }
+	.account-order-top, .account-order-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+	.account-order-top > div { min-width: 0; }
+	.account-order-event { margin: 0; overflow-wrap: anywhere; color: #1c1b1b; font: 700 16px/21px 'Hanken Grotesk', sans-serif; }
+	.account-order-invoice { margin: 5px 0 0; color: #50434e; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; word-break: break-word; }
+	.account-status { flex: 0 0 auto; border-radius: 999px; padding: 5px 10px; font: 700 11px/16px Inter, sans-serif; }
+	.status-success { background: #dcfce7; color: #14532d; }
+	.status-pending { background: #fef3c7; color: #78350f; }
+	.status-failed { background: #fee2e2; color: #991b1b; }
+	.account-order-meta { align-items: center; margin-top: 16px; color: #50434e; font: 400 12px/18px Inter, sans-serif; flex-wrap: wrap; }
+	.account-order-meta strong { color: #1c1b1b; font-weight: 700; }
+	.account-button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 999px; background: #7d297f; padding: 10px 16px; color: white; font: 700 13px/18px Inter, sans-serif; text-decoration: none; cursor: pointer; box-shadow: 0 10px 20px -12px rgba(125, 41, 127, 0.85); transition: background-color 160ms ease; }
+	.account-button:hover { background: #5f1f61; }
+	.account-button:focus-visible { outline: 3px solid #7d297f; outline-offset: 3px; }
+	.account-order-action { margin-top: 16px; width: 100%; }
+	.account-order-action .ui-icon { width: 18px; height: 18px; }
+</style>

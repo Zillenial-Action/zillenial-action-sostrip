@@ -82,6 +82,34 @@ export interface CheckoutResponse {
 	message?: string;
 }
 
+export interface Customer {
+	id: number;
+	name: string;
+	email: string;
+	email_verified: boolean;
+	initials: string;
+}
+
+export interface CustomerOrder {
+	invoice: string;
+	status: 'Pending' | 'Success' | 'Failed';
+	total_pembayaran: number;
+	jumlah_tiket: number;
+	tanggal_register: string | null;
+	event: {
+		name: string;
+		slug: string;
+		waktu_mulai: string | null;
+		nama_tempat: string | null;
+	} | null;
+	action: { type: 'view_ticket' | 'continue_payment'; url: string } | null;
+}
+
+export interface CustomerOrderResponse {
+	data: CustomerOrder[];
+	meta: { current_page: number; last_page: number; per_page: number; total: number };
+}
+
 export interface TransaksiStatus {
 	invoice: string;
 	status_pembayaran: 'Pending' | 'Success' | 'Failed';
@@ -99,25 +127,45 @@ export interface TransaksiStatus {
 }
 
 export class ApiError extends Error {
-	constructor(
-		public status: number,
-		message: string,
-	) {
+	constructor(public status: number, message: string, public code?: string, public errors?: Record<string, string[]>) {
 		super(message);
 	}
 }
 
 const base = () => (import.meta.env.PUBLIC_BACKEND_URL ?? '').replace(/\/$/, '');
 
-async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+
+const readCookie = (name: string): string => {
+	if (typeof document === 'undefined') return '';
+	const item = document.cookie.split('; ').find((cookie) => cookie.startsWith(`${name}=`));
+	return item ? decodeURIComponent(item.split('=').slice(1).join('=')) : '';
+};
+
+const ensureCsrf = async (): Promise<void> => {
+	await fetch(`${base()}/sanctum/csrf-cookie`, { credentials: 'include', headers: { Accept: 'application/json' } });
+};
+
+async function apiFetch<T>(path: string, options?: RequestInit, withCsrf = false): Promise<T> {
+	if (withCsrf) await ensureCsrf();
+	const method = options?.method?.toUpperCase() ?? 'GET';
+	const headers = new Headers({
+		Accept: 'application/json',
+		...(options?.headers ?? {}),
+	});
+	if (withCsrf && method !== 'GET' && method !== 'HEAD') {
+		const token = readCookie('XSRF-TOKEN');
+		if (token) headers.set('X-XSRF-TOKEN', token);
+	}
 	const res = await fetch(`${base()}${path}`, {
-		headers: { Accept: 'application/json', ...(options?.headers ?? {}) },
 		...options,
+		headers,
+		credentials: 'include',
 	});
 	if (!res.ok) {
-		const err = (await res.json().catch(() => ({}))) as { message?: string };
-		throw new ApiError(res.status, err.message ?? 'Terjadi kesalahan.');
+		const err = (await res.json().catch(() => ({}))) as { message?: string; code?: string; errors?: Record<string, string[]> };
+		throw new ApiError(res.status, err.message ?? 'Terjadi kesalahan.', err.code, err.errors);
 	}
+	if (res.status === 204) return undefined as T;
 	return res.json() as Promise<T>;
 }
 
@@ -157,5 +205,36 @@ export const api = {
 			const query = token ? `?token=${encodeURIComponent(token)}` : '';
 			return apiFetch<{ data: TransaksiStatus }>(`/api/transaksi/${encodeURIComponent(invoice)}${query}`);
 		},
+	},
+	auth: {
+		register: (body: { name: string; email: string; password: string; password_confirmation: string }) =>
+			apiFetch<{ message: string; data: Customer }>('/api/auth/register', {
+				method: 'POST',
+				body: JSON.stringify(body),
+				headers: { 'Content-Type': 'application/json' },
+			}, true),
+		login: (body: { email: string; password: string; remember: boolean }) =>
+			apiFetch<{ message: string; data: Customer }>('/api/auth/login', {
+				method: 'POST',
+				body: JSON.stringify(body),
+				headers: { 'Content-Type': 'application/json' },
+			}, true),
+		logout: () => apiFetch<void>('/api/auth/logout', { method: 'POST' }, true),
+		me: () => apiFetch<{ data: Customer }>('/api/auth/me'),
+		forgotPassword: (email: string) =>
+			apiFetch<{ message: string }>('/api/auth/forgot-password', {
+				method: 'POST',
+				body: JSON.stringify({ email }),
+				headers: { 'Content-Type': 'application/json' },
+			}, true),
+		resetPassword: (body: { token: string; email: string; password: string; password_confirmation: string }) =>
+			apiFetch<{ message: string }>('/api/auth/reset-password', {
+				method: 'POST',
+				body: JSON.stringify(body),
+				headers: { 'Content-Type': 'application/json' },
+			}, true),
+		resendVerification: () => apiFetch<{ message: string }>('/api/auth/email/verification-notification', { method: 'POST' }, true),
+		googleUrl: () => `${base()}/auth/google/redirect`,
+		orders: () => apiFetch<CustomerOrderResponse>('/api/account/orders'),
 	},
 };
