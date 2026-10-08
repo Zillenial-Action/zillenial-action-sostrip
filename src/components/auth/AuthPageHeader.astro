@@ -1,0 +1,29 @@
+---
+
+interface Props {
+	roundedBottom?: boolean;
+	/** Tanpa background sendiri, dipakai saat header menumpang di atas hero ungu. */
+	transparent?: boolean;
+	backHref?: string;
+	backLabel?: string;
+}
+
+const { roundedBottom = true, transparent = false, backHref = '/', backLabel = 'Kembali ke beranda' } = Astro.props;
+---
+
+<header class:list={['relative px-gutter py-sm animate-reveal', !transparent && 'bg-primary', roundedBottom && 'rounded-b-[32px]']}>
+	<div class="flex items-center justify-between gap-sm">
+		<a
+			class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/35 bg-white/20 text-white backdrop-blur-md transition-all active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+			href={backHref}
+			aria-label={backLabel}
+		>
+			<span class="material-symbols-outlined text-[22px]" data-icon="arrow_back">arrow_back</span>
+		</a>
+		<slot name="action">
+			<a href="/" class="flex h-10 items-center rounded-full bg-white px-3 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" aria-label="Zillenial Action">
+				<img src="/logo_za_crop.png" alt="Zillenial Action" class="h-7 w-auto object-contain" />
+			</a>
+		</slot>
+	</div>
+</header>

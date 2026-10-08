@@ -1,0 +1,13 @@
+---
+import ActionButton from '../ui/ActionButton.astro';
+
+interface Props {
+	label: string;
+}
+
+const { label } = Astro.props;
+const backendUrl = (import.meta.env.PUBLIC_BACKEND_URL ?? '').replace(/\/$/, '');
+const href = `${backendUrl}/auth/google/redirect`;
+---
+
+<ActionButton {label} icon="login" variant="google" {href} />

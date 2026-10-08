@@ -279,7 +279,22 @@ const { event } = Astro.props;
 		const copyBtn = modal.querySelector('[data-share-copy]');
 		const socialBtns = modal.querySelectorAll('[data-share-target]');
 
-		const getUrl = () => window.location.href;
+		// Link yang dibagikan membawa UTM sesuai tujuan supaya pembelian dari sana
+		// terbaca di Laporan UTM. UTM bawaan kunjungan si pembagi dibuang dulu.
+		const getUrl = (source: string): string => {
+			const url = new URL(window.location.href);
+			[...url.searchParams.keys()]
+				.filter((key) => key.toLowerCase().startsWith('utm_'))
+				.forEach((key) => url.searchParams.delete(key));
+			url.hash = '';
+			url.searchParams.set('utm_source', source);
+			url.searchParams.set('utm_medium', source === 'copy_link' ? 'share' : 'social');
+			const slug = url.searchParams.get('slug');
+			if (slug) {
+				url.searchParams.set('utm_campaign', slug);
+			}
+			return url.toString();
+		};
 		const getTitle = () => shareButton.dataset.shareTitle ?? document.title;
 		const prefersReduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -315,7 +330,7 @@ const { event } = Astro.props;
 		const openModal = () => {
 			lastFocus = document.activeElement;
 			if (linkInput instanceof HTMLInputElement) {
-				linkInput.value = getUrl();
+				linkInput.value = getUrl('copy_link');
 			}
 			modal.classList.remove('hidden');
 			document.body.style.overflow = 'hidden';
@@ -350,7 +365,7 @@ const { event } = Astro.props;
 		socialBtns.forEach((btn) => {
 			btn.addEventListener('click', async () => {
 				const target = btn.getAttribute('data-share-target') ?? '';
-				const url = getUrl();
+				const url = getUrl(target);
 
 				// WhatsApp & Facebook: buka jendela share langsung.
 				if (target === 'whatsapp' || target === 'facebook') {
@@ -377,7 +392,7 @@ const { event } = Astro.props;
 
 		copyBtn?.addEventListener('click', async () => {
 			try {
-				if (await copyLink(getUrl())) {
+				if (await copyLink(getUrl('copy_link'))) {
 					window.toast.success('Link event disalin ke clipboard.', { duration: 2500 });
 				} else {
 					window.toast.warning('Gagal menyalin link. Salin manual dari kotak di atas.');

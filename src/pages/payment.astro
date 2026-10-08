@@ -222,6 +222,7 @@ import Layout from '../layouts/Layout.astro';
 <script>
 	// @ts-nocheck
 	import { api } from '../lib/api';
+	import { trackInitiateCheckout } from '../lib/pixel';
 
 	// ── Helpers ──────────────────────────────────────────────────────────────
 	function el(id) { return document.getElementById(id); }
@@ -685,6 +686,8 @@ import Layout from '../layouts/Layout.astro';
 
 			if (data.status_pembayaran === 'Success') { window.location.href = '/payment/success?order_id=' + encodeURIComponent(orderId); return; }
 			if (data.status_pembayaran === 'Failed') { window.location.href = paymentPath('/payment/failed'); return; }
+
+			trackInitiateCheckout({ id: String(data.event.id), name: data.event.name, value: data.total_pembayaran }, orderId);
 
 			if (!hasUsableInstructions(data.payment_channel, data.payment_instructions)) {
 				showInstructionError();

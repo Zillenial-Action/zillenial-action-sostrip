@@ -1,0 +1,79 @@
+---
+import AuthField from '../../components/auth/AuthField.astro';
+import AuthShell from '../../components/auth/AuthShell.astro';
+import GoogleAuthButton from '../../components/auth/GoogleAuthButton.astro';
+import ActionButton from '../../components/ui/ActionButton.astro';
+
+const googleEnabled = import.meta.env.PUBLIC_GOOGLE_AUTH_ENABLED !== 'false';
+---
+
+<AuthShell title="Masuk" heading="Kembali ke perjalananmu." intro="Masuk untuk melihat status pesanan dan tiket yang pernah kamu beli.">
+	<form class="auth-form" id="login-form" novalidate>
+		<AuthField id="login-email" name="email" label="Email" type="email" autocomplete="email" inputmode="email" icon="email" placeholder="email@kamu.com" required />
+		<AuthField id="login-password" name="password" label="Password" type="password" autocomplete="current-password" icon="lock" placeholder="Masukkan password kamu" required />
+		<ActionButton label="Masuk ke akun" loadingLabel="Sedang masuk..." icon="login" type="submit" />
+		{googleEnabled && (
+			<>
+				<div class="auth-divider">atau</div>
+				<GoogleAuthButton label="Lanjut dengan Google" />
+			</>
+		)}
+		<p class="auth-muted auth-center">Belum punya akun? <a class="auth-link" href="/auth/daftar">Buat akun</a></p>
+	</form>
+</AuthShell>
+
+<script>
+	import { ApiError, api, customerToken } from '../../lib/api';
+	import { clearFieldErrors, focusFirstInvalid, isValidEmail, safeNextPath, setButtonLoading, setFieldError, type AuthFieldErrors } from '../../lib/auth-form';
+
+	const form = document.querySelector<HTMLFormElement>('#login-form');
+	const submit = form?.querySelector<HTMLButtonElement>('[data-async-button]') ?? null;
+	const next = safeNextPath(new URLSearchParams(window.location.search).get('next'));
+
+	if (customerToken.get()) window.location.replace(next);
+
+	const validate = (data: FormData): AuthFieldErrors => {
+		const errors: AuthFieldErrors = {};
+		const email = String(data.get('email') ?? '').trim();
+		const password = String(data.get('password') ?? '');
+		if (!email) errors.email = 'Masukkan email kamu.';
+		else if (!isValidEmail(email)) errors.email = 'Gunakan format email yang valid.';
+		if (!password) errors.password = 'Masukkan password kamu.';
+		return errors;
+	};
+
+	form?.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		clearFieldErrors(form);
+		setButtonLoading(submit, true);
+		const data = new FormData(form);
+		const clientErrors = validate(data);
+		if (Object.keys(clientErrors).length) {
+			Object.entries(clientErrors).forEach(([field, message]) => setFieldError(form, field, message));
+			window.toast.error('Periksa kembali data yang ditandai.');
+			focusFirstInvalid(form);
+			setButtonLoading(submit, false);
+			return;
+		}
+
+		try {
+			const response = await api.auth.login({
+				email: String(data.get('email') ?? '').trim(),
+				password: String(data.get('password') ?? ''),
+			});
+			customerToken.set(response.token);
+			window.location.assign(next);
+		} catch (error) {
+			if (error instanceof ApiError && error.errors) {
+				Object.entries(error.errors).forEach(([field, messages]) => setFieldError(form, field, messages[0] ?? ''));
+				focusFirstInvalid(form);
+			}
+			window.toast.error(error instanceof ApiError && error.status === 422
+				? 'Email atau password salah.'
+				: error instanceof ApiError && error.status === 429
+					? 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.'
+					: 'Login belum berhasil. Periksa koneksi lalu coba lagi.');
+			setButtonLoading(submit, false);
+		}
+	});
+</script>

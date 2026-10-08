@@ -1,4 +1,6 @@
 ---
+import Icon from '../ui/Icon.astro';
+
 // import logoZaWhite from '../../../sostrip.png';
 const heroImage = '/header.jpg';
 ---
@@ -11,6 +13,14 @@ const heroImage = '/header.jpg';
 	<div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 100% 0%, rgba(255,255,255,0.4) 0%, transparent 50%), radial-gradient(circle at 0% 100%, rgba(255,255,255,0.2) 0%, transparent 50%);"></div>
 	<header class="bg-transparent absolute top-0 left-0 w-full flex justify-between items-center px-gutter z-20 py-sm animate-reveal">
 		<img src="/Logo_ZA_putih.png" alt="Zillenial Action" class="h-20 w-auto object-contain drop-shadow-md" />
+		<a
+			href="/auth/login"
+			class="flex min-h-11 items-center gap-1.5 rounded-full border border-white/40 bg-white/20 px-4 text-sm font-bold text-white backdrop-blur-md transition-transform active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+			data-account-entry
+		>
+			<Icon name="user" />
+			<span data-account-entry-label>Masuk</span>
+		</a>
 	</header>
 	<div class="relative z-10 animate-reveal delay-100" style="margin-top: 20px;">
 		<h1 class="text-white mb-md font-headline-md text-[16px]">
@@ -18,3 +28,14 @@ const heroImage = '/header.jpg';
 		</h1>
 	</div>
 </section>
+
+<script>
+	import { customerToken } from '../../lib/api';
+
+	const entry = document.querySelector<HTMLAnchorElement>('[data-account-entry]');
+	if (entry && customerToken.get()) {
+		entry.href = '/akun';
+		const label = entry.querySelector('[data-account-entry-label]');
+		if (label) label.textContent = 'Akun';
+	}
+</script>

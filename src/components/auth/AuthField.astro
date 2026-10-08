@@ -1,0 +1,102 @@
+---
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+	id: string;
+	name: string;
+	label: string;
+	type?: 'email' | 'password' | 'text';
+	autocomplete?: string;
+	icon: 'email' | 'lock' | 'user';
+	hint?: string;
+	inputmode?: 'email' | 'text';
+	minlength?: number;
+	maxlength?: number;
+	required?: boolean;
+	placeholder?: string;
+}
+
+const {
+	id,
+	name,
+	label,
+	type = 'text',
+	autocomplete,
+	icon,
+	hint,
+	inputmode,
+	minlength,
+	maxlength,
+	required = false,
+	placeholder,
+} = Astro.props;
+const errorId = `${id}-error`;
+const isPassword = type === 'password';
+---
+
+<div class="grid gap-1.5">
+	<label for={id} class="text-[11px] font-bold uppercase tracking-[0.08em] text-on-surface-variant">
+		{label}
+		{hint && <span class="normal-case font-medium text-on-surface-variant/70"> {hint}</span>}
+	</label>
+	<div class="group relative">
+		<Icon name={icon} class="pointer-events-none absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors group-focus-within:text-primary" />
+		<input
+			class:list={[
+				'w-full rounded-xl border border-outline bg-surface-container-low py-sm pl-10 text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
+				isPassword ? 'pr-12' : 'pr-sm',
+			]}
+			{id}
+			{name}
+			{type}
+			{autocomplete}
+			{inputmode}
+			{minlength}
+			{maxlength}
+			{required}
+			{placeholder}
+			aria-describedby={errorId}
+		/>
+		{isPassword && (
+			<button
+				class="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+				type="button"
+				data-toggle-password={id}
+				aria-controls={id}
+				aria-label={`Tampilkan ${label.toLowerCase()}`}
+				aria-pressed="false"
+			>
+				<span data-eye-open><Icon name="eye" /></span>
+				<span data-eye-closed hidden><Icon name="eye-off" /></span>
+			</button>
+		)}
+	</div>
+	<p class="min-h-[18px] text-xs font-semibold text-on-error-container" id={errorId} data-field-error={name} aria-live="polite"></p>
+</div>
+
+<script>
+	const bindPasswordToggles = () => {
+		document.querySelectorAll<HTMLButtonElement>('[data-toggle-password]:not([data-toggle-ready])').forEach((toggle) => {
+			toggle.dataset.toggleReady = 'true';
+			toggle.addEventListener('click', () => {
+				const input = document.getElementById(toggle.dataset.togglePassword ?? '');
+				if (!(input instanceof HTMLInputElement)) return;
+				const showPassword = input.type === 'password';
+				input.type = showPassword ? 'text' : 'password';
+				const openIcon = toggle.querySelector<HTMLElement>('[data-eye-open]');
+				const closedIcon = toggle.querySelector<HTMLElement>('[data-eye-closed]');
+				if (openIcon) openIcon.hidden = showPassword;
+				if (closedIcon) closedIcon.hidden = !showPassword;
+				toggle.setAttribute('aria-label', `${showPassword ? 'Sembunyikan' : 'Tampilkan'} ${input.labels?.[0]?.textContent?.trim().toLowerCase() ?? 'password'}`);
+				toggle.setAttribute('aria-pressed', String(showPassword));
+			});
+		});
+	};
+
+	bindPasswordToggles();
+	document.addEventListener('astro:page-load', bindPasswordToggles);
+</script>
+
+<style>
+	input[aria-invalid='true'] { border-color: #ba1a1a; }
+</style>
