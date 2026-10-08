@@ -26,3 +26,9 @@ pnpm-debug.log*
 AGENTS.md
 
 .vscode/
+
+# Tooling lokal graphify / Claude Code
+graphify-out
+.claude/
+CLAUDE.md
+.graphifyignore

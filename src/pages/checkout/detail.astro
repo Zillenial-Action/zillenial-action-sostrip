@@ -65,10 +65,11 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 </Layout>
 
 <script>
-	import { api } from '../../lib/api';
+	import { api, customerAuthHeader } from '../../lib/api';
 	import type { PaymentMethod } from '../../lib/api';
 	import { mapToEventDetail } from '../../lib/mappers';
 	import { bind, queryParam } from '../../lib/csr';
+	import { getUtm } from '../../lib/utm';
 
 	const paymentUrl = (path: string, orderId: string, accessToken?: string) => {
 		const params = new URLSearchParams({ order_id: orderId });
@@ -302,18 +303,21 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 				submitBtn.innerHTML = '<span class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true"></span><span>Memproses...</span>';
 			}
 
+			const utm = getUtm();
 			const body = {
 				event_slug: form.dataset.eventSlug ?? '',
 				jumlah_tiket: currentQty,
 				payment_method_id: paymentMethodId,
 				...(appliedVoucherCode ? { voucher_code: appliedVoucherCode } : {}),
 				pengunjung,
+				...(utm ? { utm } : {}),
 			};
 
 			try {
 				const res = await fetch(`${backendUrl}/api/checkout`, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+					// Token customer opsional: pesanan tercatat di akun jika sedang login.
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...customerAuthHeader() },
 					body: JSON.stringify(body),
 				});
 				const data = await res.json() as { success?: boolean; order_id?: string; access_token?: string; payment_channel?: string | null; message?: string };
@@ -373,6 +377,14 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 
 			setupCheckout();
 			updateCheckoutSoldOutState(event.isSoldOut === true);
+
+			// Tautan dari fundraiser membawa ?voucher=KODE: isi dan cek otomatis.
+			const voucherFromLink = queryParam('voucher');
+			const voucherInput = document.getElementById('voucher-input');
+			if (voucherFromLink && !event.isSoldOut && voucherInput instanceof HTMLInputElement && !voucherInput.disabled) {
+				voucherInput.value = voucherFromLink.toUpperCase();
+				document.getElementById('voucher-apply-btn')?.click();
+			}
 		} catch {
 			window.location.replace('/events');
 		}

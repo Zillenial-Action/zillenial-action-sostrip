@@ -1,0 +1,60 @@
+---
+import AuthShell from '../../components/auth/AuthShell.astro';
+import ActionButton from '../../components/ui/ActionButton.astro';
+import Icon from '../../components/ui/Icon.astro';
+---
+
+<AuthShell title="Memproses login" heading="Memproses login" intro="Menyiapkan akun kamu." showFootnote={false}>
+	<div class="callback-status flex min-h-11 items-center gap-sm text-sm font-semibold text-on-surface-variant" id="callback-status" role="status">
+		<Icon name="spinner" />
+		<span>Memeriksa hasil login Google...</span>
+	</div>
+	<div class="mt-md grid">
+		<ActionButton id="callback-link" label="Kembali ke halaman masuk" icon="login" href="/auth/login" hidden />
+	</div>
+</AuthShell>
+
+<script>
+	import { api, customerToken } from '../../lib/api';
+
+	const params = new URLSearchParams(window.location.hash.slice(1));
+	// Kode sekali pakai jangan tertinggal di riwayat browser.
+	history.replaceState(null, '', window.location.pathname);
+
+	const title = document.querySelector('[data-auth-heading]');
+	const intro = document.querySelector('[data-auth-intro]');
+	const status = document.querySelector<HTMLElement>('#callback-status');
+	const link = document.querySelector<HTMLElement>('#callback-link');
+
+	const errorMessages: Record<string, string> = {
+		google_disabled: 'Login Google belum tersedia. Gunakan email dan password untuk sementara.',
+		google_cancelled: 'Login Google dibatalkan. Kamu bisa mencobanya lagi kapan saja.',
+		google_email_unverified: 'Email akun Google kamu belum terverifikasi oleh Google. Gunakan akun Google lain atau daftar dengan email.',
+		google_account_conflict: 'Email ini sudah terhubung dengan akun Google lain. Masuk dengan akun Google yang sama seperti sebelumnya.',
+	};
+
+	const fail = (detail: string) => {
+		if (title) title.textContent = 'Login Google belum selesai';
+		if (intro) intro.textContent = detail;
+		if (status) status.hidden = true;
+		if (link) link.hidden = false;
+	};
+
+	const code = params.get('code');
+	const error = params.get('error');
+
+	if (code) {
+		api.auth.exchangeGoogleCode(code)
+			.then((response) => {
+				customerToken.set(response.token);
+				window.location.replace('/akun');
+			})
+			.catch(() => fail('Sesi login Google sudah kedaluwarsa. Silakan coba lagi.'));
+	} else {
+		fail(errorMessages[error ?? ''] ?? 'Terjadi kendala saat login dengan Google. Silakan coba lagi.');
+	}
+</script>
+
+<style>
+	.callback-status[hidden] { display: none; }
+</style>

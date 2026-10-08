@@ -36,6 +36,7 @@ const skeleton: EventDetail = {
 <script>
 	import { api } from '../../lib/api';
 	import { mapToEventDetail } from '../../lib/mappers';
+	import { trackViewContent } from '../../lib/pixel';
 	import { bind, renderList, queryParam } from '../../lib/csr';
 
 	const load = async () => {
@@ -47,6 +48,7 @@ const skeleton: EventDetail = {
 			const event = mapToEventDetail(res.data);
 
 			document.title = `${event.title} - Zillenial Action`;
+			trackViewContent({ id: String(res.data.id), name: res.data.name, value: res.data.harga });
 
 			bind(document, {
 				title: event.title,

@@ -63,8 +63,37 @@ import Layout from '../../layouts/Layout.astro';
 </Layout>
 
 <script>
+	import { api } from '../../lib/api';
+	import { trackPurchase } from '../../lib/pixel';
+
 	const params = new URLSearchParams(window.location.search);
 	const orderId = params.get('order_id') ?? '—';
 	const el = document.getElementById('success-order-id');
 	if (el) el.textContent = orderId;
+
+	// Purchase hanya dikirim setelah backend memastikan status Success, bukan sekadar karena
+	// halaman ini dibuka. Token akses disimpan halaman /payment di sessionStorage.
+	const trackConfirmedPurchase = (attempt = 0) => {
+		if (!params.get('order_id')) return;
+		let token = '';
+		try {
+			token = sessionStorage.getItem('payment_access_token_' + orderId) ?? '';
+		} catch {
+			// Penyimpanan diblokir: coba tanpa token (hanya berhasil untuk transaksi lama).
+		}
+
+		api.transaksi.status(orderId, token).then((res) => {
+			const data = res.data;
+			if (data.status_pembayaran === 'Success') {
+				trackPurchase({ id: String(data.event.id), name: data.event.name, value: data.total_pembayaran }, data.invoice);
+			} else if (data.status_pembayaran === 'Pending' && attempt < 10) {
+				// Webhook Midtrans bisa sedikit terlambat.
+				setTimeout(() => trackConfirmedPurchase(attempt + 1), 3000);
+			}
+		}).catch(() => {
+			// Tracking tidak boleh mengganggu halaman sukses.
+		});
+	};
+
+	trackConfirmedPurchase();
 </script>

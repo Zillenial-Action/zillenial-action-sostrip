@@ -1,5 +1,6 @@
 ---
 import BottomNav from '../components/BottomNav.astro';
+import TrackingPixels from '../components/TrackingPixels.astro';
 import Toast from '../components/ui/Toast.astro';
 import '../styles/global.css';
 
@@ -8,6 +9,12 @@ interface Props {
 }
 
 const { title = 'Zillenial Action' } = Astro.props;
+const backendOrigin = import.meta.env.PUBLIC_BACKEND_URL ? new URL(import.meta.env.PUBLIC_BACKEND_URL).origin : '';
+// Domain pixel hanya dibuka di CSP bila pixel-nya aktif.
+const metaPixel = Boolean(import.meta.env.PUBLIC_META_PIXEL_ID);
+const tiktokPixel = Boolean(import.meta.env.PUBLIC_TIKTOK_PIXEL_ID);
+const pixelScriptSrc = [metaPixel && 'https://connect.facebook.net', tiktokPixel && 'https://analytics.tiktok.com'].filter(Boolean).join(' ');
+const pixelConnectSrc = [metaPixel && 'https://www.facebook.com https://connect.facebook.net', tiktokPixel && 'https://analytics.tiktok.com https://*.tiktok.com'].filter(Boolean).join(' ');
 ---
 
 <!doctype html>
@@ -17,7 +24,7 @@ const { title = 'Zillenial Action' } = Astro.props;
 		<meta content="width=device-width, initial-scale=1.0" name="viewport" />
 		<meta
 			http-equiv="Content-Security-Policy"
-			content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://zillenialaction.id; frame-src 'none'; object-src 'none'; base-uri 'self';"
+			content={`default-src 'self'; script-src 'self' 'unsafe-inline' ${pixelScriptSrc}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://zillenialaction.id ${backendOrigin} ${pixelConnectSrc}; frame-src 'none'; object-src 'none'; base-uri 'self';`}
 		/>
 		<title>{title}</title>
 		<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,600;0,700;0,900;1,900&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
@@ -25,6 +32,7 @@ const { title = 'Zillenial Action' } = Astro.props;
 		<script is:inline>
 			document.documentElement.classList.add('motion-ready');
 		</script>
+		<TrackingPixels />
 		<style is:global>
 			.no-scrollbar::-webkit-scrollbar {
 				display: none;
@@ -235,6 +243,11 @@ const { title = 'Zillenial Action' } = Astro.props;
 
 			setupMotionReveal();
 			document.addEventListener('astro:page-load', setupMotionReveal);
+		</script>
+		<script>
+			import { captureUtm } from '../lib/utm';
+
+			captureUtm();
 		</script>
 	</body>
 </html>

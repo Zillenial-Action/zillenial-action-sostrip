@@ -1,0 +1,301 @@
+---
+import AuthNotice from '../components/auth/AuthNotice.astro';
+import AuthPageHeader from '../components/auth/AuthPageHeader.astro';
+import ActionButton from '../components/ui/ActionButton.astro';
+import Icon from '../components/ui/Icon.astro';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Fundraiser | Zillenial Action">
+	<div class="grid min-h-[70vh] place-items-center text-on-surface-variant" data-fr-gate role="status">
+		<Icon name="spinner" />
+		<span class="sr-only">Memeriksa sesi...</span>
+	</div>
+	<main class="pb-32" data-fr-main hidden>
+		<div class="relative overflow-hidden rounded-b-[32px] bg-primary">
+			<AuthPageHeader roundedBottom={false} transparent backHref="/akun" backLabel="Kembali ke akun" />
+			<section class="px-gutter pb-10 pt-1 text-white animate-reveal delay-100">
+				<h1 id="fr-heading" class="font-headline-lg-mobile text-[clamp(28px,7vw,38px)] leading-[1.06]">Jadi fundraiser</h1>
+				<p class="mt-sm max-w-md text-body-sm text-white/85">
+					Buat kode voucher untuk event yang kamu dukung. Pembeli yang pakai kodemu dapat potongan harga, kamu dapat komisi dari setiap tiket yang sudah dibayar.
+				</p>
+			</section>
+		</div>
+
+		<section class="relative -mt-6 px-gutter" aria-label="Rekap komisi" data-fr-summary hidden>
+			<div class="fr-summary animate-reveal delay-200">
+				<div class="fr-summary-main">
+					<p class="fr-label">Total komisi</p>
+					<p class="fr-summary-value" data-fr-earned>Rp0</p>
+					<p class="fr-note">Gabungan semua event, dihitung dari tiket yang sudah dibayar.</p>
+				</div>
+				<dl class="fr-summary-side">
+					<div><dt>Menunggu pembayaran</dt><dd data-fr-pending>Rp0</dd></div>
+					<div><dt>Tiket terjual</dt><dd data-fr-sold>0</dd></div>
+				</dl>
+			</div>
+		</section>
+
+		<section class="mt-lg px-gutter" aria-labelledby="fr-programs-heading">
+			<h2 id="fr-programs-heading" class="mb-md font-headline-md text-headline-md text-on-surface">Event yang bisa kamu dukung</h2>
+			<div class="flex items-center gap-sm rounded-2xl border border-outline-variant/40 bg-white p-md text-sm text-on-surface-variant" data-fr-loading role="status"><Icon name="spinner" /><span>Memuat program fundraiser...</span></div>
+			<AuthNotice id="fr-message" kind="error" />
+			<button type="button" class="fr-retry" data-fr-retry hidden>Muat ulang</button>
+			<div class="rounded-2xl border border-outline-variant/40 bg-white p-md" data-fr-empty hidden>
+				<div class="flex items-center gap-sm text-primary"><Icon name="ticket" /><h3 class="font-headline-md text-lg font-bold text-on-surface">Belum ada program fundraiser yang dibuka.</h3></div>
+				<p class="mb-md mt-sm text-sm text-on-surface-variant">Program fundraiser dibuka per event oleh tim Zillenial Action. Cek lagi nanti, atau lihat event yang sedang berjalan.</p>
+				<ActionButton label="Lihat event" icon="calendar" href="/events" />
+			</div>
+			<div class="grid gap-sm" data-fr-list hidden></div>
+			<template id="fr-copy-icon"><Icon name="copy" /></template>
+			<template id="fr-share-icon"><Icon name="share" /></template>
+			<template id="fr-ticket-icon"><Icon name="ticket" /></template>
+		</section>
+	</main>
+</Layout>
+
+<script>
+	import { ApiError, api, customerToken, type FundraiserProgram } from '../lib/api';
+	import { setNotice } from '../lib/auth-form';
+
+	const gate = document.querySelector('[data-fr-gate]');
+	const mainEl = document.querySelector('[data-fr-main]');
+	const loading = document.querySelector('[data-fr-loading]');
+	const list = document.querySelector('[data-fr-list]');
+	const empty = document.querySelector('[data-fr-empty]');
+	const summary = document.querySelector('[data-fr-summary]');
+	const retry = document.querySelector('[data-fr-retry]');
+	const message = document.querySelector('#fr-message');
+
+	const money = (value: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
+	const date = (value: string | null) => value ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(value)) : 'Tanggal belum tersedia';
+	const setHidden = (node: Element | null, hidden: boolean) => node?.toggleAttribute('hidden', hidden);
+	const goToLogin = () => window.location.replace(`/auth/login?next=${encodeURIComponent('/fundraiser')}`);
+	const icon = (id: string) => document.querySelector<HTMLTemplateElement>(id)?.content.firstElementChild?.cloneNode(true) ?? null;
+
+	const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string) => {
+		const node = document.createElement(tag);
+		node.className = className;
+		if (text !== undefined) node.textContent = text;
+		return node;
+	};
+
+	const button = (label: string, iconId: string, variant: 'primary' | 'secondary') => {
+		const node = el('button', `fr-button fr-button-${variant}`);
+		node.type = 'button';
+		const glyph = icon(iconId);
+		if (glyph) node.append(glyph);
+		node.append(el('span', '', label));
+		return node;
+	};
+
+	const flash = (node: HTMLButtonElement, text: string) => {
+		const label = node.querySelector('span');
+		if (!label) return;
+		const original = label.textContent;
+		label.textContent = text;
+		window.setTimeout(() => { label.textContent = original; }, 2000);
+	};
+
+	const copyText = async (text: string) => {
+		try {
+			await navigator.clipboard.writeText(text);
+			return true;
+		} catch {
+			return false;
+		}
+	};
+
+	const renderCode = (program: FundraiserProgram) => {
+		const code = program.kode;
+		if (!code) return null;
+
+		const box = el('div', 'fr-code');
+		const row = el('div', 'fr-code-row');
+		const value = el('p', 'fr-code-value', code.kode);
+		value.setAttribute('aria-label', `Kode fundraiser kamu: ${code.kode}`);
+		row.append(value);
+
+		const actions = el('div', 'fr-code-actions');
+		const copyBtn = button('Salin kode', '#fr-copy-icon', 'secondary');
+		copyBtn.addEventListener('click', async () => {
+			flash(copyBtn, (await copyText(code.kode)) ? 'Tersalin' : 'Gagal menyalin');
+		});
+		actions.append(copyBtn);
+
+		if (code.share_url) {
+			const shareUrl = code.share_url;
+			const shareBtn = button('Bagikan tautan', '#fr-share-icon', 'primary');
+			shareBtn.addEventListener('click', async () => {
+				const text = `Pakai kode ${code.kode} untuk potongan ${money(program.nilai_diskon)} per tiket ${program.event?.name ?? ''}.`.trim();
+				if (navigator.share) {
+					try {
+						await navigator.share({ title: program.event?.name ?? 'Zillenial Action', text, url: shareUrl });
+						return;
+					} catch (error) {
+						if (error instanceof DOMException && error.name === 'AbortError') return;
+					}
+				}
+				flash(shareBtn, (await copyText(shareUrl)) ? 'Tautan tersalin' : 'Gagal menyalin');
+			});
+			actions.append(shareBtn);
+		}
+
+		const stats = el('dl', 'fr-stats');
+		[
+			['Tiket terjual', String(code.tiket_terjual)],
+			['Kuota terpakai', `${code.digunakan} / ${code.kuota}`],
+			['Total komisi', money(code.komisi_didapat)],
+		].forEach(([term, detail]) => {
+			const item = el('div', '');
+			item.append(el('dt', '', term), el('dd', '', detail));
+			stats.append(item);
+		});
+
+		box.append(row, actions, stats);
+		if (code.komisi_pending > 0) {
+			box.append(el('p', 'fr-note', `${money(code.komisi_pending)} lagi masuk setelah pembeli menyelesaikan pembayaran.`));
+		}
+		return box;
+	};
+
+	const renderProgram = (program: FundraiserProgram): HTMLElement => {
+		const article = el('article', 'fr-card');
+		article.dataset.programId = String(program.id);
+
+		const top = el('div', 'fr-card-top');
+		const info = el('div', 'min-w-0');
+		info.append(
+			el('h3', 'fr-card-title', program.event?.name ?? 'Event Zillenial Action'),
+			el('p', 'fr-card-meta', program.event?.waktu_mulai ? date(program.event.waktu_mulai) : 'Jadwal belum tersedia'),
+		);
+		top.append(info);
+		if (!program.is_open) top.append(el('span', 'fr-closed', 'Ditutup'));
+
+		const terms = el('dl', 'fr-terms');
+		[
+			['Pembeli hemat', `${money(program.nilai_diskon)} per tiket`],
+			['Komisi kamu', `${money(program.nilai_komisi)} per tiket`],
+		].forEach(([term, detail]) => {
+			const item = el('div', '');
+			item.append(el('dt', '', term), el('dd', '', detail));
+			terms.append(item);
+		});
+
+		article.append(top, terms);
+
+		const codeBox = renderCode(program);
+		if (codeBox) {
+			article.append(codeBox);
+			article.append(el('p', 'fr-note', `Kode berlaku sampai ${date(program.tanggal_berakhir)}.`));
+		} else if (program.is_open) {
+			const generate = button('Buat kode saya', '#fr-ticket-icon', 'primary');
+			generate.classList.add('fr-generate');
+			const error = el('p', 'fr-error');
+			error.setAttribute('role', 'alert');
+			error.hidden = true;
+			generate.addEventListener('click', async () => {
+				generate.disabled = true;
+				generate.setAttribute('aria-busy', 'true');
+				error.hidden = true;
+				try {
+					const res = await api.fundraiser.generateCode(program.id);
+					article.replaceWith(renderProgram(res.data));
+					load(false);
+				} catch (err) {
+					if (err instanceof ApiError && err.status === 401) { goToLogin(); return; }
+					error.textContent = err instanceof ApiError ? err.message : 'Kode belum bisa dibuat. Periksa koneksi lalu coba lagi.';
+					error.hidden = false;
+					generate.disabled = false;
+					generate.removeAttribute('aria-busy');
+				}
+			});
+			article.append(generate, error);
+		}
+
+		return article;
+	};
+
+	const load = async (showSpinner = true) => {
+		if (!customerToken.get()) { goToLogin(); return; }
+		if (showSpinner) setHidden(loading, false);
+		setNotice(message);
+		setHidden(retry, true);
+
+		try {
+			const res = await api.fundraiser.dashboard();
+			setHidden(gate, true);
+			setHidden(mainEl, false);
+
+			const hasCode = res.data.some((program) => program.kode);
+			setHidden(summary, !hasCode);
+			const earned = document.querySelector('[data-fr-earned]');
+			const pending = document.querySelector('[data-fr-pending]');
+			const sold = document.querySelector('[data-fr-sold]');
+			if (earned) earned.textContent = money(res.summary.komisi_didapat);
+			if (pending) pending.textContent = money(res.summary.komisi_pending);
+			if (sold) sold.textContent = String(res.summary.tiket_terjual);
+
+			if (list instanceof HTMLElement && showSpinner) {
+				list.replaceChildren(...res.data.map(renderProgram));
+			}
+			setHidden(list, res.data.length === 0);
+			setHidden(empty, res.data.length > 0);
+		} catch (error) {
+			if (error instanceof ApiError && error.status === 401) { goToLogin(); return; }
+			setHidden(gate, true);
+			setHidden(mainEl, false);
+			setNotice(message, 'Program fundraiser belum dapat dimuat. Periksa koneksi lalu coba lagi.');
+			setHidden(retry, false);
+		} finally {
+			setHidden(loading, true);
+		}
+	};
+
+	retry?.addEventListener('click', () => load());
+	load();
+</script>
+
+<style is:global>
+	[data-fr-gate][hidden], [data-fr-main][hidden], [data-fr-summary][hidden], [data-fr-loading][hidden], [data-fr-list][hidden], [data-fr-empty][hidden], .fr-retry[hidden], .fr-error[hidden] { display: none; }
+
+	.fr-summary { display: grid; gap: 16px; border-radius: 1rem; background: #fff; padding: 20px; border: 1px solid rgba(212, 193, 207, 0.4); box-shadow: 0 10px 28px -16px rgba(80, 67, 78, 0.4); }
+	.fr-label { margin: 0; color: #50434e; font: 600 12px/16px Inter, sans-serif; }
+	.fr-summary-value { margin: 4px 0 0; color: #7d297f; font: 800 clamp(28px, 8vw, 36px)/1.1 'Hanken Grotesk', sans-serif; overflow-wrap: anywhere; }
+	.fr-summary-side { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; border-top: 1px solid #efe6ee; padding-top: 14px; }
+	.fr-summary-side dt, .fr-stats dt, .fr-terms dt { color: #50434e; font: 400 12px/16px Inter, sans-serif; }
+	.fr-summary-side dd, .fr-stats dd { margin: 2px 0 0; color: #1c1b1b; font: 700 15px/20px Inter, sans-serif; }
+
+	.fr-card { border-radius: 1rem; border: 1px solid rgba(212, 193, 207, 0.4); background: #fff; padding: 16px; box-shadow: 0 10px 28px -18px rgba(80, 67, 78, 0.35); }
+	.fr-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+	.fr-card-title { margin: 0; color: #1c1b1b; font: 700 17px/22px 'Hanken Grotesk', sans-serif; overflow-wrap: anywhere; }
+	.fr-card-meta { margin: 4px 0 0; color: #50434e; font: 400 12px/18px Inter, sans-serif; }
+	.fr-closed { flex: 0 0 auto; border-radius: 999px; background: #eee6ec; padding: 5px 10px; color: #50434e; font: 700 11px/16px Inter, sans-serif; }
+
+	.fr-terms { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0 0; }
+	.fr-terms dd { margin: 2px 0 0; color: #1c1b1b; font: 700 14px/19px Inter, sans-serif; }
+
+	.fr-code { margin-top: 16px; border-radius: 0.75rem; background: #f7eef6; padding: 14px; }
+	.fr-code-value { margin: 0; color: #5f1f61; font: 800 24px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.06em; overflow-wrap: anywhere; }
+	.fr-code-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+	.fr-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 14px 0 0; }
+	.fr-stats dd { font-size: 14px; overflow-wrap: anywhere; }
+
+	.fr-button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 10px 14px; font: 700 13px/18px Inter, sans-serif; cursor: pointer; transition: background-color 160ms ease; }
+	.fr-button .ui-icon { width: 18px; height: 18px; }
+	.fr-button:focus-visible, .fr-retry:focus-visible { outline: 3px solid #7d297f; outline-offset: 3px; }
+	.fr-button:disabled { cursor: progress; opacity: 0.7; }
+	.fr-button-primary { border: 0; background: #7d297f; color: #fff; }
+	.fr-button-primary:hover { background: #5f1f61; }
+	.fr-button-secondary { border: 1px solid #7d297f; background: #fff; color: #7d297f; }
+	.fr-button-secondary:hover { background: #fbf5fa; }
+	.fr-generate { margin-top: 16px; width: 100%; }
+
+	.fr-note { margin: 10px 0 0; color: #50434e; font: 400 12px/18px Inter, sans-serif; }
+	.fr-error { margin: 10px 0 0; color: #93000a; font: 600 13px/18px Inter, sans-serif; }
+	.fr-retry { margin-top: 12px; min-height: 44px; border: 1px solid #7d297f; border-radius: 999px; background: #fff; padding: 10px 16px; color: #7d297f; font: 700 13px/18px Inter, sans-serif; cursor: pointer; }
+
+	@media (max-width: 359px) {
+		.fr-code-actions, .fr-stats, .fr-terms, .fr-summary-side { grid-template-columns: 1fr; }
+	}
+</style>
