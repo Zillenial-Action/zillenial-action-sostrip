@@ -1,0 +1,97 @@
+---
+// Isi deskripsi (HTML dari rich text editor admin) dirender di browser lewat setRichHtml().
+---
+
+<section class="hidden" data-reveal-scope data-description-section>
+	<h2 class="mb-md font-headline-md text-headline-md text-on-background" data-reveal>Deskripsi & ketentuan</h2>
+	<div class="rounded-2xl border border-outline-variant/40 bg-white p-md shadow-[0_8px_24px_-14px_rgba(80,67,78,0.35)]" data-reveal>
+		<div class="event-description" data-description></div>
+	</div>
+</section>
+
+<style is:global>
+	.event-description {
+		color: #50434e;
+		font: 400 15px/1.65 Inter, sans-serif;
+		overflow-wrap: anywhere;
+	}
+
+	.event-description > * + * {
+		margin-top: 0.85em;
+	}
+
+	.event-description h2,
+	.event-description h3,
+	.event-description h4 {
+		color: #1c1b1b;
+		font-family: 'Hanken Grotesk', sans-serif;
+		font-weight: 700;
+		line-height: 1.3;
+	}
+
+	.event-description h2 {
+		font-size: 20px;
+		margin-top: 1.4em;
+	}
+
+	.event-description h3 {
+		font-size: 17px;
+		margin-top: 1.2em;
+	}
+
+	.event-description h4 {
+		font-size: 15px;
+		margin-top: 1.1em;
+	}
+
+	.event-description > :first-child {
+		margin-top: 0;
+	}
+
+	.event-description strong,
+	.event-description b {
+		color: #1c1b1b;
+		font-weight: 700;
+	}
+
+	.event-description ul,
+	.event-description ol {
+		padding-left: 1.3em;
+	}
+
+	.event-description ul {
+		list-style: disc;
+	}
+
+	.event-description ol {
+		list-style: decimal;
+	}
+
+	.event-description li + li {
+		margin-top: 0.35em;
+	}
+
+	.event-description li::marker {
+		color: #7d297f;
+	}
+
+	.event-description blockquote {
+		border-left: 3px solid #d4c1cf;
+		padding-left: 0.9em;
+		font-style: italic;
+	}
+
+	.event-description a {
+		color: #7d297f;
+		font-weight: 600;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.event-description img {
+		display: block;
+		max-width: 100%;
+		height: auto;
+		border-radius: 0.75rem;
+	}
+</style>

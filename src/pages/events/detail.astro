@@ -1,5 +1,6 @@
 ---
 import EventAgenda from '../../components/event-detail/EventAgenda.astro';
+import EventDescription from '../../components/event-detail/EventDescription.astro';
 import EventDetailHero from '../../components/event-detail/EventDetailHero.astro';
 import EventHighlights from '../../components/event-detail/EventHighlights.astro';
 import EventLocationNote from '../../components/event-detail/EventLocationNote.astro';
@@ -24,6 +25,7 @@ const skeleton: EventDetail = {
 		<EventDetailHero event={skeleton} />
 		<main class="relative z-20 -mt-10 space-y-lg px-gutter pb-28">
 			<EventSummaryCard event={skeleton} />
+			<EventDescription />
 			<EventHighlights event={skeleton} />
 			<EventTickets event={skeleton} />
 			<EventAgenda event={skeleton} />
@@ -37,7 +39,7 @@ const skeleton: EventDetail = {
 	import { api } from '../../lib/api';
 	import { mapToEventDetail } from '../../lib/mappers';
 	import { trackViewContent } from '../../lib/pixel';
-	import { bind, renderList, queryParam } from '../../lib/csr';
+	import { bind, renderList, queryParam, setRichHtml, isBlankHtml } from '../../lib/csr';
 
 	const load = async () => {
 		const slug = queryParam('slug');
@@ -96,6 +98,12 @@ const skeleton: EventDetail = {
 			renderList('[data-tickets-list]', '[data-tickets-tpl]', event.tickets.map((t) => ({
 				name: t.name, description: t.description, status: t.status, priceLabel: t.priceLabel,
 			})));
+
+			const descriptionSection = document.querySelector('[data-description-section]');
+			const description = document.querySelector('[data-description]');
+			const hasDescription = !isBlankHtml(event.summary);
+			descriptionSection?.classList.toggle('hidden', !hasDescription);
+			if (description) setRichHtml(description, hasDescription ? event.summary : '');
 
 			const highlightsSection = document.querySelector('[data-highlights-section]');
 			highlightsSection?.classList.toggle('hidden', event.highlights.length === 0);
