@@ -183,6 +183,64 @@
 							</select>
 						</div>
 					</div>
+
+					<div>
+						<label
+							class="mb-xs block text-[11px] font-bold uppercase tracking-[0.08em] text-on-surface-variant"
+							for={`checkout-domisili-${num}`}
+						>
+							Domisili <span class="text-error">*</span>
+						</label>
+						<div class="relative">
+							<span
+								class="material-symbols-outlined pointer-events-none absolute left-sm top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant"
+								data-icon="location_city"
+							>
+								location_city
+							</span>
+							<input
+								class="w-full rounded-xl border border-outline-variant bg-surface-container-low py-sm pl-10 pr-sm text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+								id={`checkout-domisili-${num}`}
+								name={`attendees[${num - 1}][domisili]`}
+								type="text"
+								placeholder="Contoh: Bandung"
+								minlength="2"
+								maxlength="100"
+								required={num === 1}
+								autocomplete={num === 1 ? 'address-level2' : 'off'}
+								data-attendee-field
+							/>
+						</div>
+					</div>
+
+					<!-- Hanya tampil untuk event yang menyediakan baju (ada_baju). Select tetap disabled
+					     selama tersembunyi agar tidak ikut validasi. -->
+					<div class="hidden" data-shirt-field>
+						<label
+							class="mb-xs block text-[11px] font-bold uppercase tracking-[0.08em] text-on-surface-variant"
+							for={`checkout-shirt-${num}`}
+						>
+							Ukuran baju <span class="text-error">*</span>
+						</label>
+						<div class="relative">
+							<span
+								class="material-symbols-outlined pointer-events-none absolute left-sm top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant"
+								data-icon="checkroom"
+							>
+								checkroom
+							</span>
+							<select
+								class="w-full appearance-none rounded-xl border border-outline-variant bg-surface-container-low py-sm pl-10 pr-sm text-sm text-on-surface focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+								id={`checkout-shirt-${num}`}
+								name={`attendees[${num - 1}][ukuran_baju]`}
+								disabled
+								data-attendee-field
+								data-shirt-select
+							>
+								<option value="" disabled selected>Pilih ukuran baju</option>
+							</select>
+						</div>
+					</div>
 				</div>
 				</div>
 			))
@@ -309,6 +367,25 @@
 		document.addEventListener('checkout:qty-change', (e) => {
 			const qty = (e as CustomEvent<{ qty: number }>).detail.qty;
 			showBlocks(qty);
+		});
+
+		// Dikirim halaman checkout setelah data event dimuat: tampilkan pilihan ukuran baju
+		// hanya bila event menyediakan baju.
+		document.addEventListener('checkout:shirt-sizes', (e) => {
+			const sizes = (e as CustomEvent<{ sizes: string[] }>).detail.sizes;
+			modal.querySelectorAll<HTMLElement>('[data-shirt-field]').forEach((wrapper) => {
+				const select = wrapper.querySelector<HTMLSelectElement>('[data-shirt-select]');
+				if (!select) return;
+
+				const enabled = sizes.length > 0;
+				wrapper.classList.toggle('hidden', !enabled);
+				select.disabled = !enabled;
+
+				const placeholder = select.options[0];
+				select.replaceChildren(placeholder);
+				sizes.forEach((size) => select.add(new Option(size, size)));
+				placeholder.selected = true;
+			});
 		});
 
 		// Init
