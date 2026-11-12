@@ -322,14 +322,34 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 				...(utm ? { utm } : {}),
 			};
 
+			let res: Response;
 			try {
-				const res = await fetch(`${backendUrl}/api/checkout`, {
+				res = await fetch(`${backendUrl}/api/checkout`, {
 					method: 'POST',
 					// Token customer opsional: pesanan tercatat di akun jika sedang login.
 					headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...customerAuthHeader() },
 					body: JSON.stringify(body),
 				});
-				const data = await res.json() as { success?: boolean; order_id?: string; access_token?: string; payment_channel?: string | null; message?: string };
+			} catch (err) {
+				console.error('[checkout] request gagal terkirim / respons diblokir', err);
+				window.toast.error('Terjadi kesalahan jaringan. Coba lagi.');
+				resetBtn();
+				return;
+			}
+
+			try {
+				// Baca sebagai teks dulu: respons non-JSON (mis. halaman error proxy) tidak boleh
+				// dilaporkan sebagai "kesalahan jaringan" karena pesanan bisa saja sudah tercatat.
+				const raw = await res.text();
+				let data: { success?: boolean; order_id?: string; access_token?: string; payment_channel?: string | null; message?: string };
+				try {
+					data = JSON.parse(raw);
+				} catch {
+					console.error('[checkout] respons bukan JSON', { status: res.status, body: raw.slice(0, 2000) });
+					window.toast.error(`Server mengembalikan respons tidak valid (HTTP ${res.status}). Cek pesanan Anda sebelum mencoba lagi.`);
+					resetBtn();
+					return;
+				}
 
 				if (!res.ok || !data.success) { window.toast.error(data.message ?? 'Checkout gagal. Coba lagi.'); resetBtn(); return; }
 
@@ -342,8 +362,9 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 				// Channel VA/QRIS/e-wallet → halaman instruksi bayar dengan polling status backend.
 				window.toast.success('Pesanan dibuat. Mengarahkan ke halaman pembayaran…', { title: 'Berhasil', duration: 2500 });
 				window.location.href = paymentUrl('/payment', order_id, access_token);
-			} catch {
-				window.toast.error('Terjadi kesalahan jaringan. Coba lagi.');
+			} catch (err) {
+				console.error('[checkout] gagal memproses respons', err);
+				window.toast.error('Terjadi kesalahan saat memproses pesanan. Cek pesanan Anda sebelum mencoba lagi.');
 				resetBtn();
 			}
 		});
