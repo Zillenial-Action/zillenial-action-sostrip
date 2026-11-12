@@ -66,7 +66,7 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 
 <script>
 	import { api, customerAuthHeader } from '../../lib/api';
-	import type { PaymentMethod } from '../../lib/api';
+	import type { CheckoutAttendee, PaymentMethod } from '../../lib/api';
 	import { mapToEventDetail } from '../../lib/mappers';
 	import { bind, queryParam } from '../../lib/csr';
 	import { getUtm } from '../../lib/utm';
@@ -264,15 +264,24 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 			}
 
 			// Collect attendees
-			const pengunjung: Array<{ name: string; email: string; telepon: string; jenis_kelamin: string }> = [];
+			const pengunjung: CheckoutAttendee[] = [];
 			let idx = 0;
 			while (idx < 3) {
 				const nameEl = form.querySelector<HTMLInputElement>(`[name="attendees[${idx}][name]"]`);
 				const emailEl = form.querySelector<HTMLInputElement>(`[name="attendees[${idx}][email]"]`);
 				const telEl = form.querySelector<HTMLInputElement>(`[name="attendees[${idx}][phone]"]`);
 				const genderEl = form.querySelector<HTMLSelectElement>(`[name="attendees[${idx}][jenis_kelamin]"]`);
+				const domisiliEl = form.querySelector<HTMLInputElement>(`[name="attendees[${idx}][domisili]"]`);
+				const shirtEl = form.querySelector<HTMLSelectElement>(`[name="attendees[${idx}][ukuran_baju]"]`);
 				if (!nameEl?.value) break;
-				pengunjung.push({ name: nameEl.value, email: emailEl?.value ?? '', telepon: telEl?.value ?? '', jenis_kelamin: genderEl?.value ?? '' });
+				pengunjung.push({
+					name: nameEl.value,
+					email: emailEl?.value ?? '',
+					telepon: telEl?.value ?? '',
+					jenis_kelamin: genderEl?.value ?? '',
+					domisili: domisiliEl?.value.trim() ?? '',
+					...(shirtEl && !shirtEl.disabled ? { ukuran_baju: shirtEl.value } : {}),
+				});
 				idx++;
 			}
 
@@ -363,6 +372,10 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 			bind(document, {
 				backHref: `/events/detail?slug=${encodeURIComponent(event.slug)}`,
 			});
+
+			document.dispatchEvent(new CustomEvent('checkout:shirt-sizes', {
+				detail: { sizes: eventRes.data.ada_baju ? (eventRes.data.ukuran_baju ?? []) : [] },
+			}));
 
 			renderPaymentMethods(paymentMethods);
 			document.dispatchEvent(new CustomEvent('checkout:payment-methods-rendered'));

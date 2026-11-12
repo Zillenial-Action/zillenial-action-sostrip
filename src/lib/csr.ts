@@ -86,6 +86,76 @@ function reveal(node: HTMLElement): void {
 	node.querySelectorAll<HTMLElement>('[data-reveal]').forEach((el) => el.classList.add('is-visible'));
 }
 
+// Allowlist ini mengikuti HtmlSanitizer di backend (zillenial-action-profile).
+const ALLOWED_TAGS = new Set([
+	'P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'S',
+	'OL', 'UL', 'LI', 'BLOCKQUOTE', 'H2', 'H3', 'H4', 'A', 'IMG',
+]);
+// Elemen yang dibuang beserta isinya (bukan sekadar di-unwrap).
+const DROP_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE', 'NOSCRIPT', 'SVG', 'MATH']);
+
+function cleanNode(node: Element): void {
+	Array.from(node.children).forEach((child) => {
+		// tagName elemen SVG/MathML huruf kecil, jadi dinormalkan dulu.
+		const tag = child.tagName.toUpperCase();
+		if (DROP_TAGS.has(tag)) {
+			child.remove();
+			return;
+		}
+
+		cleanNode(child);
+
+		if (!ALLOWED_TAGS.has(tag)) {
+			child.replaceWith(...Array.from(child.childNodes));
+			return;
+		}
+
+		const href = child.getAttribute('href');
+		const src = child.getAttribute('src');
+		const alt = child.getAttribute('alt');
+		const width = child.getAttribute('width');
+		const height = child.getAttribute('height');
+		Array.from(child.attributes).forEach((attr) => child.removeAttribute(attr.name));
+
+		if (tag === 'A') {
+			const url = href ? safeUrl(href) : null;
+			if (url) {
+				child.setAttribute('href', url);
+				child.setAttribute('target', '_blank');
+				child.setAttribute('rel', 'noopener noreferrer');
+			}
+		} else if (tag === 'IMG') {
+			const url = src ? safeUrl(src) : null;
+			if (!url || !/^https?:$/.test(new URL(url, window.location.origin).protocol)) {
+				child.remove();
+				return;
+			}
+			child.setAttribute('src', url);
+			child.setAttribute('alt', alt ?? '');
+			if (width && /^\d+$/.test(width)) child.setAttribute('width', width);
+			if (height && /^\d+$/.test(height)) child.setAttribute('height', height);
+			child.setAttribute('loading', 'lazy');
+			child.setAttribute('decoding', 'async');
+		}
+	});
+}
+
+/**
+ * Isi `el` dengan HTML rich text dari admin. Disaring ulang di browser memakai allowlist
+ * (tag + atribut + skema URL) sebelum dimasukkan ke DOM.
+ */
+export function setRichHtml(el: Element, html: string): void {
+	const doc = new DOMParser().parseFromString(html, 'text/html');
+	cleanNode(doc.body);
+	el.replaceChildren(...Array.from(doc.body.childNodes));
+}
+
+/** True bila HTML hanya berisi tag kosong (mis. `<p><br></p>`) tanpa teks atau gambar. */
+export function isBlankHtml(html: string): boolean {
+	const doc = new DOMParser().parseFromString(html, 'text/html');
+	return !doc.body.textContent?.trim() && !doc.body.querySelector('img');
+}
+
 /** Baca nilai query string dari URL saat ini. */
 export function queryParam(name: string): string | null {
 	return new URLSearchParams(window.location.search).get(name);

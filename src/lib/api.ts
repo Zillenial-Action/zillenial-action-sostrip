@@ -30,6 +30,9 @@ export interface EventDetailAPI extends EventListItem {
 		description?: string | null;
 	}>;
 	jumlah_tiket: number;
+	/** True bila peserta event mendapat baju; ukuran_baju berisi pilihan ukurannya. */
+	ada_baju?: boolean;
+	ukuran_baju?: string[];
 }
 
 export interface PaymentMethod {
@@ -54,12 +57,21 @@ export interface VoucherValidateResponse {
 	is_external?: boolean;
 }
 
+export interface CheckoutAttendee {
+	name: string;
+	email: string;
+	telepon: string;
+	jenis_kelamin: string;
+	domisili: string;
+	ukuran_baju?: string;
+}
+
 export interface CheckoutBody {
 	event_slug: string;
 	jumlah_tiket: number;
 	payment_method_id: number;
 	voucher_code?: string;
-	pengunjung: Array<{ name: string; email: string; telepon: string; jenis_kelamin: string }>;
+	pengunjung: CheckoutAttendee[];
 	utm?: UtmPayload;
 }
 
