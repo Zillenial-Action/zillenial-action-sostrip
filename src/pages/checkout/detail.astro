@@ -42,6 +42,7 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 		data-event-id="0"
 		data-backend-url={backendUrl}
 		data-tickets="[]"
+		data-service-fee='{"tipe":"none","nilai":0}'
 		data-sold-out="false"
 	>
 		<input type="hidden" name="ticket_index" value="0" data-selected-ticket-index />
@@ -66,7 +67,8 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 
 <script>
 	import { api, customerAuthHeader } from '../../lib/api';
-	import type { CheckoutAttendee, PaymentMethod } from '../../lib/api';
+	import type { CheckoutAttendee, PaymentMethod, ServiceFeeConfig } from '../../lib/api';
+	import { calculateServiceFee } from '../../lib/serviceFee';
 	import { mapToEventDetail } from '../../lib/mappers';
 	import { bind, queryParam } from '../../lib/csr';
 	import { getUtm } from '../../lib/utm';
@@ -206,10 +208,15 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 		const priceSubtotal = document.querySelector('[data-price-subtotal]');
 		const priceTotal = document.querySelector('[data-price-total]');
 		const priceQtyBadge = document.querySelector('[data-price-qty-badge]');
+		const priceFeeRow = document.querySelector('[data-price-fee-row]');
+		const priceFee = document.querySelector('[data-price-fee]');
+		const priceFeeLabel = document.querySelector('[data-price-fee-label]');
+		const priceSummary = document.querySelector('[data-price-summary]');
 
 		interface TicketData { name: string; priceLabel: string; priceRaw: number }
 		const ticketData: TicketData[] = JSON.parse(form.dataset.tickets ?? '[]');
 		const backendUrl = (form.dataset.backendUrl ?? '').replace(/\/$/, '');
+		const serviceFee: ServiceFeeConfig = JSON.parse(form.dataset.serviceFee ?? '{"tipe":"none","nilai":0}');
 
 		let currentTicketIndex = 0;
 		let currentQty = 1;
@@ -223,12 +230,26 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 			const ticket = ticketData[currentTicketIndex];
 			if (!ticket) return;
 			const perTicket = ticket.priceRaw;
-			const total = Math.max(0, perTicket * currentQty - appliedDiscountPerTicket * currentQty);
+			const subtotal = Math.max(0, (perTicket - appliedDiscountPerTicket) * currentQty);
+			const fee = calculateServiceFee(serviceFee, subtotal, currentQty);
+			const total = subtotal + fee;
 			const totalLabel = perTicket ? fmt(total) : ticket.priceLabel;
 			if (stickyTotal instanceof HTMLElement) stickyTotal.textContent = totalLabel;
-			if (priceSubtotal instanceof HTMLElement) priceSubtotal.textContent = perTicket ? fmt(perTicket) : ticket.priceLabel;
+			if (priceSubtotal instanceof HTMLElement) priceSubtotal.textContent = perTicket ? fmt(subtotal) : ticket.priceLabel;
 			if (priceTotal instanceof HTMLElement) priceTotal.textContent = totalLabel;
 			if (priceQtyBadge instanceof HTMLElement) priceQtyBadge.textContent = `×${currentQty}`;
+			if (priceFeeRow instanceof HTMLElement) {
+				priceFeeRow.classList.toggle('hidden', fee <= 0);
+				priceFeeRow.classList.toggle('flex', fee > 0);
+			}
+			if (priceFee instanceof HTMLElement) priceFee.textContent = fmt(fee);
+			if (priceFeeLabel instanceof HTMLElement) {
+				priceFeeLabel.textContent = serviceFee.tipe === 'percent'
+					? `(${serviceFee.nilai.toLocaleString('id-ID')}%)`
+					: `(${fmt(serviceFee.nilai)} × ${currentQty})`;
+			}
+			// Rincian hanya perlu tampil bila ada biaya layanan; total tetap terlihat di sticky CTA.
+			if (priceSummary instanceof HTMLElement) priceSummary.hidden = fee <= 0;
 		};
 
 		document.addEventListener('checkout:qty-change', (e) => {
@@ -408,6 +429,7 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 				event.tickets.map((t) => ({ name: t.name, priceLabel: t.priceLabel, priceRaw: t.priceRaw ?? 0 })),
 			);
 			form.dataset.soldOut = event.isSoldOut ? 'true' : 'false';
+			form.dataset.serviceFee = JSON.stringify(eventRes.data.biaya_layanan ?? { tipe: 'none', nilai: 0 });
 
 			setupCheckout();
 			updateCheckoutSoldOutState(event.isSoldOut === true);

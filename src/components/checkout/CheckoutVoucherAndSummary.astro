@@ -22,6 +22,21 @@
 	</div>
 
 	<p id="voucher-msg" class="mt-xs hidden text-sm" aria-live="polite"></p>
+
+	<dl class="mt-md space-y-xs border-t border-outline-variant/30 pt-sm text-sm" data-price-summary hidden>
+		<div class="flex items-center justify-between gap-sm">
+			<dt class="text-on-surface-variant">Subtotal tiket</dt>
+			<dd class="font-bold text-on-surface" data-price-subtotal>—</dd>
+		</div>
+		<div class="hidden items-center justify-between gap-sm" data-price-fee-row>
+			<dt class="text-on-surface-variant">Biaya Layanan <span class="text-xs" data-price-fee-label></span></dt>
+			<dd class="font-bold text-on-surface" data-price-fee>—</dd>
+		</div>
+		<div class="flex items-center justify-between gap-sm">
+			<dt class="font-black text-on-surface">Total</dt>
+			<dd class="font-black text-primary" data-price-total>—</dd>
+		</div>
+	</dl>
 </div>
 
 <script>

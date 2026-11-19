@@ -193,6 +193,14 @@ import Layout from '../layouts/Layout.astro';
 							<span class="font-mono text-[11px] font-bold text-on-surface-variant" id="order-id">—</span>
 						</div>
 						<div class="h-px bg-outline-variant/20"></div>
+						<div class="hidden items-center justify-between text-sm" id="order-subtotal-row">
+							<span class="text-on-surface-variant">Subtotal tiket</span>
+							<span class="font-bold text-on-surface" id="order-subtotal">—</span>
+						</div>
+						<div class="hidden items-center justify-between text-sm" id="order-fee-row">
+							<span class="text-on-surface-variant">Biaya Layanan</span>
+							<span class="font-bold text-on-surface" id="order-fee">—</span>
+						</div>
 						<div class="flex items-center justify-between">
 							<span class="text-sm font-black text-on-surface">Total</span>
 							<span class="text-base font-black text-primary" id="order-total">—</span>
@@ -670,6 +678,14 @@ import Layout from '../layouts/Layout.astro';
 			setTxt('order-ticket', data.event.name);
 			setTxt('order-qty',    data.jumlah_tiket + ' tiket');
 			setTxt('order-total',  fmt(data.total_pembayaran));
+			if (data.biaya_layanan && data.biaya_layanan > 0) {
+				setTxt('order-subtotal', fmt(data.subtotal != null ? data.subtotal : data.total_pembayaran - data.biaya_layanan));
+				setTxt('order-fee', fmt(data.biaya_layanan));
+				['order-subtotal-row', 'order-fee-row'].forEach(function (id) {
+					var row = el(id);
+					if (row) { row.classList.remove('hidden'); row.classList.add('flex'); }
+				});
+			}
 			setTxt('va-total', fmt(data.total_pembayaran));
 			setTxt('ew-total', fmt(data.total_pembayaran));
 			setTxt('qris-total', fmt(data.total_pembayaran));
