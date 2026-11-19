@@ -17,7 +17,7 @@ export interface EventListItem {
 }
 
 /**
- * Biaya layanan dari pengaturan admin. percent = % dari subtotal setelah voucher (dibulatkan ke atas),
+ * Biaya layanan per metode pembayaran (diatur admin). percent = % dari subtotal setelah voucher (dibulatkan ke atas),
  * fixed = rupiah per tiket. Hanya untuk preview; total final dihitung ulang oleh backend.
  */
 export interface ServiceFeeConfig {
@@ -42,7 +42,6 @@ export interface EventDetailAPI extends EventListItem {
 	/** True bila peserta event mendapat baju; ukuran_baju berisi pilihan ukurannya. */
 	ada_baju?: boolean;
 	ukuran_baju?: string[];
-	biaya_layanan?: ServiceFeeConfig;
 }
 
 export interface PaymentMethod {
@@ -51,6 +50,7 @@ export interface PaymentMethod {
 	image: string | null;
 	type: string;
 	midtrans_payment_type?: PaymentChannel | null;
+	biaya_layanan?: ServiceFeeConfig;
 }
 
 export interface EventListResponse {

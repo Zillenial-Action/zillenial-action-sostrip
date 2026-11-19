@@ -42,7 +42,6 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 		data-event-id="0"
 		data-backend-url={backendUrl}
 		data-tickets="[]"
-		data-service-fee='{"tipe":"none","nilai":0}'
 		data-sold-out="false"
 	>
 		<input type="hidden" name="ticket_index" value="0" data-selected-ticket-index />
@@ -67,8 +66,8 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 
 <script>
 	import { api, customerAuthHeader } from '../../lib/api';
-	import type { CheckoutAttendee, PaymentMethod, ServiceFeeConfig } from '../../lib/api';
-	import { calculateServiceFee } from '../../lib/serviceFee';
+	import type { CheckoutAttendee, PaymentMethod } from '../../lib/api';
+	import { calculateServiceFee, readServiceFee, serviceFeeRateLabel } from '../../lib/serviceFee';
 	import { mapToEventDetail } from '../../lib/mappers';
 	import { bind, queryParam } from '../../lib/csr';
 	import { getUtm } from '../../lib/utm';
@@ -162,10 +161,20 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 				bind(itemNode, { name: method.name, image: method.image ?? '' });
 
 				const radio = itemNode.querySelector('[data-pm-radio]');
+				const fee = method.biaya_layanan ?? { tipe: 'none', nilai: 0 };
 				if (radio instanceof HTMLInputElement) {
 					radio.value = String(method.id);
+					radio.dataset.feeTipe = fee.tipe;
+					radio.dataset.feeNilai = String(fee.nilai);
 					radio.checked = optionIndex === 0;
 					radio.required = optionIndex === 0;
+				}
+
+				const feeLabel = itemNode.querySelector('[data-pm-fee]');
+				const rate = serviceFeeRateLabel(fee);
+				if (feeLabel instanceof HTMLElement && rate) {
+					feeLabel.textContent = `+ Biaya layanan ${rate}`;
+					feeLabel.classList.remove('hidden');
 				}
 
 				const img = itemNode.querySelector('[data-pm-image]');
@@ -216,7 +225,6 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 		interface TicketData { name: string; priceLabel: string; priceRaw: number }
 		const ticketData: TicketData[] = JSON.parse(form.dataset.tickets ?? '[]');
 		const backendUrl = (form.dataset.backendUrl ?? '').replace(/\/$/, '');
-		const serviceFee: ServiceFeeConfig = JSON.parse(form.dataset.serviceFee ?? '{"tipe":"none","nilai":0}');
 
 		let currentTicketIndex = 0;
 		let currentQty = 1;
@@ -231,6 +239,8 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 			if (!ticket) return;
 			const perTicket = ticket.priceRaw;
 			const subtotal = Math.max(0, (perTicket - appliedDiscountPerTicket) * currentQty);
+			// Biaya layanan mengikuti metode pembayaran yang sedang dipilih.
+			const serviceFee = readServiceFee(form.querySelector<HTMLInputElement>('[data-pm-radio]:checked'));
 			const fee = calculateServiceFee(serviceFee, subtotal, currentQty);
 			const total = subtotal + fee;
 			const totalLabel = perTicket ? fmt(total) : ticket.priceLabel;
@@ -245,7 +255,7 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 			if (priceFee instanceof HTMLElement) priceFee.textContent = fmt(fee);
 			if (priceFeeLabel instanceof HTMLElement) {
 				priceFeeLabel.textContent = serviceFee.tipe === 'percent'
-					? `(${serviceFee.nilai.toLocaleString('id-ID')}%)`
+					? `(${serviceFeeRateLabel(serviceFee)})`
 					: `(${fmt(serviceFee.nilai)} × ${currentQty})`;
 			}
 			// Rincian hanya perlu tampil bila ada biaya layanan; total tetap terlihat di sticky CTA.
@@ -262,6 +272,10 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 			appliedDiscountPerTicket = d.discount_per_ticket;
 			appliedVoucherCode = d.code;
 			updatePriceDisplay();
+		});
+
+		form.addEventListener('change', (e) => {
+			if (e.target instanceof HTMLInputElement && e.target.matches('[data-pm-radio]')) updatePriceDisplay();
 		});
 
 		updatePriceDisplay();
@@ -429,7 +443,6 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 				event.tickets.map((t) => ({ name: t.name, priceLabel: t.priceLabel, priceRaw: t.priceRaw ?? 0 })),
 			);
 			form.dataset.soldOut = event.isSoldOut ? 'true' : 'false';
-			form.dataset.serviceFee = JSON.stringify(eventRes.data.biaya_layanan ?? { tipe: 'none', nilai: 0 });
 
 			setupCheckout();
 			updateCheckoutSoldOutState(event.isSoldOut === true);

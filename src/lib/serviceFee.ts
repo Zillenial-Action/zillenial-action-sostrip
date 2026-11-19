@@ -18,3 +18,20 @@ export function calculateServiceFee(config: ServiceFeeConfig, subtotal: number, 
 
 	return 0;
 }
+
+const rupiah = (n: number) => `Rp${Math.round(n).toLocaleString('id-ID')}`;
+
+/** Label tarif, mis. "0,7%" atau "Rp4.000/tiket"; kosong bila tanpa biaya. */
+export function serviceFeeRateLabel(config: ServiceFeeConfig): string {
+	if (config.nilai <= 0) return '';
+	if (config.tipe === 'percent') return `${config.nilai.toLocaleString('id-ID')}%`;
+	if (config.tipe === 'fixed') return `${rupiah(config.nilai)}/tiket`;
+	return '';
+}
+
+export function readServiceFee(el: HTMLElement | null | undefined): ServiceFeeConfig {
+	const tipe = el?.dataset.feeTipe;
+	const nilai = Number(el?.dataset.feeNilai ?? 0);
+	if ((tipe === 'percent' || tipe === 'fixed') && nilai > 0) return { tipe, nilai };
+	return { tipe: 'none', nilai: 0 };
+}
