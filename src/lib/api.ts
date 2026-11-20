@@ -16,6 +16,15 @@ export interface EventListItem {
 	is_sold_out?: boolean;
 }
 
+/**
+ * Biaya layanan per metode pembayaran (diatur admin). percent = % dari subtotal setelah voucher (dibulatkan ke atas),
+ * fixed = rupiah per tiket. Hanya untuk preview; total final dihitung ulang oleh backend.
+ */
+export interface ServiceFeeConfig {
+	tipe: 'none' | 'percent' | 'fixed';
+	nilai: number;
+}
+
 export interface EventDetailAPI extends EventListItem {
 	waktu_berakhir: string | null;
 	deskripsi: string | null;
@@ -41,6 +50,7 @@ export interface PaymentMethod {
 	image: string | null;
 	type: string;
 	midtrans_payment_type?: PaymentChannel | null;
+	biaya_layanan?: ServiceFeeConfig;
 }
 
 export interface EventListResponse {
@@ -167,6 +177,8 @@ export interface FundraiserDashboardResponse {
 export interface TransaksiStatus {
 	invoice: string;
 	status_pembayaran: 'Pending' | 'Success' | 'Failed';
+	subtotal?: number;
+	biaya_layanan?: number;
 	total_pembayaran: number;
 	jumlah_tiket: number;
 	payment_channel?: PaymentChannel | null;
