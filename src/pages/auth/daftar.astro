@@ -30,6 +30,7 @@ const googleEnabled = import.meta.env.PUBLIC_GOOGLE_AUTH_ENABLED !== 'false';
 
 <script>
 	import { ApiError, api, customerToken } from '../../lib/api';
+	import { trackCompleteRegistration } from '../../lib/pixel';
 	import { clearFieldErrors, focusFirstInvalid, isValidEmail, setButtonLoading, setFieldError, validateStrongPassword, type AuthFieldErrors } from '../../lib/auth-form';
 
 	const form = document.querySelector<HTMLFormElement>('#register-form');
@@ -74,6 +75,7 @@ const googleEnabled = import.meta.env.PUBLIC_GOOGLE_AUTH_ENABLED !== 'false';
 				password_confirmation: String(data.get('password_confirmation') ?? ''),
 			});
 			customerToken.set(response.token);
+			trackCompleteRegistration(response.data.id);
 			window.location.assign('/akun');
 		} catch (error) {
 			if (error instanceof ApiError && error.errors) {

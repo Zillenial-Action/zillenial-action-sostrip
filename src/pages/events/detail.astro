@@ -50,7 +50,7 @@ const skeleton: EventDetail = {
 			const event = mapToEventDetail(res.data);
 
 			document.title = `${event.title} - Zillenial Action`;
-			trackViewContent({ id: String(res.data.id), name: res.data.name, value: res.data.harga });
+			trackViewContent({ id: String(res.data.id), name: res.data.name, value: res.data.harga }, slug);
 
 			bind(document, {
 				title: event.title,

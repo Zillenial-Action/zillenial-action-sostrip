@@ -246,8 +246,11 @@ const pixelConnectSrc = [metaPixel && 'https://www.facebook.com https://connect.
 		</script>
 		<script>
 			import { captureUtm } from '../lib/utm';
+			import { captureFbclid, trackPageViewServer } from '../lib/pixel';
 
 			captureUtm();
+			captureFbclid();
+			trackPageViewServer();
 		</script>
 	</body>
 </html>
