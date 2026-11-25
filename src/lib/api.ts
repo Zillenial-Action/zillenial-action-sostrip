@@ -83,6 +83,8 @@ export interface CheckoutBody {
 	voucher_code?: string;
 	pengunjung: CheckoutAttendee[];
 	utm?: UtmPayload;
+	/** Data pencocokan Meta (lib/pixel.ts getMetaIds) untuk Conversions API di backend. */
+	meta?: { fbp?: string; fbc?: string; source_url: string };
 }
 
 export interface PaymentInstructions {
@@ -120,6 +122,8 @@ export interface CustomerAuthResponse {
 	message: string;
 	token: string;
 	data: Customer;
+	/** Hanya dari login Google: true bila akunnya baru saja dibuat. */
+	registered?: boolean;
 }
 
 export interface CustomerOrder {

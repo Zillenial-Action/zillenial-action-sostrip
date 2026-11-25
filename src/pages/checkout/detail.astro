@@ -71,6 +71,7 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 	import { mapToEventDetail } from '../../lib/mappers';
 	import { bind, queryParam } from '../../lib/csr';
 	import { getUtm } from '../../lib/utm';
+	import { getMetaIds, trackAddToCart } from '../../lib/pixel';
 
 	const paymentUrl = (path: string, orderId: string, accessToken?: string) => {
 		const params = new URLSearchParams({ order_id: orderId });
@@ -355,6 +356,8 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 				...(appliedVoucherCode ? { voucher_code: appliedVoucherCode } : {}),
 				pengunjung,
 				...(utm ? { utm } : {}),
+				// fbp/fbc untuk event InitiateCheckout & Purchase yang dikirim backend ke Meta.
+				meta: getMetaIds(),
 			};
 
 			let res: Response;
@@ -423,6 +426,7 @@ const backendUrl = import.meta.env.PUBLIC_BACKEND_URL ?? '';
 			const paymentMethods = pmRes.data;
 
 			document.title = `Checkout – ${event.title} | Zillenial Action`;
+			trackAddToCart({ id: String(eventId), name: eventRes.data.name, value: eventRes.data.harga }, slug);
 
 			// Isi field statis
 			bind(document, {

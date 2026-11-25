@@ -16,6 +16,7 @@ import Icon from '../../components/ui/Icon.astro';
 
 <script>
 	import { api, customerToken } from '../../lib/api';
+	import { trackCompleteRegistration } from '../../lib/pixel';
 
 	const params = new URLSearchParams(window.location.hash.slice(1));
 	// Kode sekali pakai jangan tertinggal di riwayat browser.
@@ -47,6 +48,7 @@ import Icon from '../../components/ui/Icon.astro';
 		api.auth.exchangeGoogleCode(code)
 			.then((response) => {
 				customerToken.set(response.token);
+				if (response.registered) trackCompleteRegistration(response.data.id);
 				window.location.replace('/akun');
 			})
 			.catch(() => fail('Sesi login Google sudah kedaluwarsa. Silakan coba lagi.'));
